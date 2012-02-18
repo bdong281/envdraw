@@ -3,9 +3,10 @@ from envdraw2 import *
 from drawable import *
 from pprint import pprint
 import tkinter as tk
+import random
 
 FUNCTION_TYPE = type(lambda x: 0)
-IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", 
+IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code",
                     "locale", "encodings.utf_8", "codecs", "ast",
                     "_ast", "rewrite", "envdraw2", "tkinter"}
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
@@ -115,7 +116,7 @@ class Tracker(object):
         self.static_link = {}
         self.function_tk = {}
         self.frame_tk = {}
-   
+
     def defined_function(self, fn):
         self.current_frame.variables[fn.__name__] = fn
         self.static_link[fn] = self.current_frame
@@ -148,19 +149,20 @@ class Tracker(object):
 
     def draw(self):
         master = tk.Tk()
-        canvas = tk.Canvas(master)
+        canvas = tk.Canvas(master, width=800, height=600)
         canvas.pack(fill=tk.BOTH, expand=1)
         for fr in self.frames:
-            fr_tk = Frame(canvas, 100, 100)
+            x, y = self.place(canvas)
+            fr_tk = Frame(canvas, x, y)
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
                 variable_draw = Variable(canvas, fr_tk, var)
                 if type(val) == FUNCTION_TYPE:
-                    value_draw = Function(canvas, 200, 200, val.__name__, 
+                    value_draw = Function(canvas, 200, 200, val.__name__,
                         inspect.getargspec(val).args)
                     self.function_tk[val] = value_draw
                 else:
-                    value_draw = Value(canvas, fr_tk, val) 
+                    value_draw = Value(canvas, fr_tk, val)
                 Connector(canvas, value_draw, variable_draw)
 
         for f, ftk in self.frame_tk.items():
@@ -174,6 +176,18 @@ class Tracker(object):
             fn_tk = self.function_tk[fn]
             fr_tk = self.frame_tk[fr]
             Connector(canvas, fr_tk, fn_tk)
+
+    def place(self, canvas):
+        x, y = random.randint(50, 650), random.randint(50, 500)
+        x, y = x//10*10, y//10*10
+        attempts = 0
+        while len(canvas.find_overlapping(x-10, y-10, x+160, y+80)) > 0:
+            if attempts > 30:
+                break
+            x, y = random.randint(50, 650), random.randint(50, 500)
+            x, y = x//10*10, y//10*10
+            attempts += 1
+        return x, y
 
 TRACKER = Tracker()
 funcdef.tracker = TRACKER
