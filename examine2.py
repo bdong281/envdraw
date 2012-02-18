@@ -141,9 +141,9 @@ class Tracker(object):
         master = tk.Tk()
         canvas = tk.Canvas(master, width=800, height=600)
         canvas.pack(fill=tk.BOTH, expand=1)
-        for fr in self.frames:
+        for i, fr in enumerate(self.frames):
             x, y = self.place(canvas)
-            fr_tk = Frame(canvas, x, y)
+            fr_tk = Frame(canvas, x, y, i == 0)
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
                 variable_draw = Variable(canvas, fr_tk, var)
