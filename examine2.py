@@ -1,18 +1,21 @@
+#! /usr/bin/env python3
+
 import inspect, gc
 from envdraw2 import *
 from drawable import *
 from pprint import pprint
 import tkinter as tk
 import random
+import sys
 
 FUNCTION_TYPE = type(lambda x: 0)
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code",
                     "locale", "encodings.utf_8", "codecs", "ast",
-                    "_ast", "rewrite", "envdraw2", "tkinter"}
+                    "_ast", "rewrite", "envdraw2", "tkinter", "_functools", "_heapq"}
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
                 "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
                 "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
-                "_get_called_function", "TRACKER", "Env_Frame", "pprint"}
+                "_get_called_function", "TRACKER", "Env_Frame", "pprint", "funccall"}
 
 def _get_called_function():
     frame = inspect.currentframe().f_back.f_back
@@ -46,7 +49,6 @@ def funccall():
     print("CALL STACK APPEND", fn)
     tracker.current_frame = Env_Frame(f_back=tracker.static_link[fn])
     tracker.frames.append(tracker.current_frame)
-    tracker.active_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
 """
 
 def funccall(func):
@@ -55,7 +57,7 @@ def funccall(func):
     print('call:', func)
     fn = func
     #fn = func.orig
-    tracker.active_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
+    tracker.acctive_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
     print(fn)
 """
 
@@ -78,11 +80,6 @@ def funcreturn(val):
     print('returning from', fn)
     funcreturn.tracker.exiting_function(fn, py_fr, f_locals, f_globals)
     print('return:', val)
-    print(funcreturn.tracker.active_frames)
-    try:
-        del funcreturn.tracker.active_frames[fn]
-    except:
-        pass
     return val
 
 class Env_Frame(object):
@@ -98,19 +95,12 @@ class Env_Frame(object):
         self.f_forward.append(frame)
 
     def add_vars(self, dic):
-        print("setting var from ", self.variables, " to ", dic)
         dic = dict(dic)
         self.variables = dic
-        for i in self.variables:
-            try:
-                self.variables[i] = self.variables[i].orig
-            except:
-                pass
 
 class Tracker(object):
 
     def __init__(self):
-        self.active_frames = {}
         self.current_frame = Env_Frame() #this is global
         self.frames = [self.current_frame]
         self.call_stack = []
@@ -127,9 +117,8 @@ class Tracker(object):
         frame.add_vars(frame_vars)
         print(frame.variables)
         print("CALL STACK POP", fn)
+        #self.call_stack[0].add_vars(self.clean_frame(py_fr.f_globals))
         self.current_frame = self.call_stack.pop()
-        for py_fr, env_fr in self.active_frames.values():
-            env_fr.add_vars(py_fr.f_locals)
 
     def clean_frame(self, frame_locals):
         to_remove = []
@@ -148,12 +137,13 @@ class Tracker(object):
                 getattr(value, "__module__", None) in IGNORE_MODULES
 
     def draw(self):
+        self.current_frame.add_vars(self.clean_frame(inspect.currentframe().f_globals))
         master = tk.Tk()
         canvas = tk.Canvas(master, width=800, height=600)
         canvas.pack(fill=tk.BOTH, expand=1)
-        for fr in self.frames:
+        for i, fr in enumerate(self.frames):
             x, y = self.place(canvas)
-            fr_tk = Frame(canvas, x, y)
+            fr_tk = Frame(canvas, x, y, i == 0)
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
                 variable_draw = Variable(canvas, fr_tk, var)
@@ -181,7 +171,7 @@ class Tracker(object):
             Connector(canvas, fr_tk, fn_tk)
 
     def place(self, canvas):
-        x, y = random.randint(50, 650), random.randint(50, 500)
+        x, y = random.randint(50, 600), random.randint(50, 500)
         x, y = x//10*10, y//10*10
         attempts = 0
         while len(canvas.find_overlapping(x-10, y-10, x+160, y+80)) > 0:
@@ -204,7 +194,7 @@ if __name__ == '__main__':
 
     exec(compile(new_tree, '<unknown>', 'exec'))
     """
-    tree = ast.parse(open('test.py').read())
+    tree = ast.parse(open(sys.argv[1]).read())
     new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
     #new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
 
