@@ -41,7 +41,10 @@ class Frame(Connectable):
     def __init__(self, canvas, x, y):
         Connectable.__init__(self, canvas)
         self.variables = []
-        self.rect = canvas.create_rectangle(x, y, x+150, y+200, tag=self.tag)
+        self.rect = canvas.create_rectangle(x, y, x+150, y+200, tag=self.tag,
+                                            fill="white")
+        canvas.create_oval(x+130, y-20, x+170, y+20, tag=self.tag, fill="white")
+        canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
 
     @property
     def pos(self):
@@ -51,7 +54,7 @@ class Frame(Connectable):
         """
         Adds a Variable to this Frame. Returns the position that the Variable
         should be drawn at.
-        
+
         TODO: Automatically grow frame when too many variables are defined.
         """
         self.variables.append(variable)
@@ -61,6 +64,11 @@ class Frame(Connectable):
 class Function(Connectable):
 
     prefix = "function"
+
+    def __init__(self, canvas, x, y):
+        Connectable.__init__(self, canvas)
+        self.top = canvas.create_line(x, y, x+150, y, x+150, y+30, x+160, y+30)
+        canvas.create_line(x, y+20, x+10, y+20, x+10, y+50, x+160, y+50)
 
 
 class Variable(Connectable):
@@ -99,4 +107,5 @@ if __name__ == '__main__':
     f = Frame(canvas, 100, 100)
     Variable(canvas, f, "foo")
     Variable(canvas, f, "bar")
+    Function(canvas, 100, 400)
     tk.mainloop()
