@@ -69,6 +69,7 @@ def funcreturn(val):
     except:
         pass
     args = inspect.getargspec(fn).args
+    print(fn.__closure__)
     if fn.__closure__:
         closures = set([x.cell_contents for x in fn.__closure__])
         for k,v in py_fr.f_locals.items():
@@ -125,7 +126,6 @@ class Tracker(object):
         frame = self.current_frame
         frame.add_vars(frame_vars)
         print(frame.variables)
-        #self.current_frame = frame.f_back
         print("CALL STACK POP", fn)
         self.current_frame = self.call_stack.pop()
         for py_fr, env_fr in self.active_frames.values():
@@ -157,7 +157,9 @@ class Tracker(object):
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
                 variable_draw = Variable(canvas, fr_tk, var)
-                if type(val) == FUNCTION_TYPE:
+                if val in self.function_tk:
+                    value_draw = self.function_tk[val]
+                elif type(val) == FUNCTION_TYPE:
                     x, y = self.place(canvas)
                     value_draw = Function(canvas, x, y, val.__name__,
                         inspect.getargspec(val).args)
