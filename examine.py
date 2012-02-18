@@ -2,9 +2,10 @@ import sys, inspect, gc
 
 FUNCTION_TYPE = type(lambda x: 0)
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", 
-                    "locale", "encodings.utf_8", "codecs"}
-IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", 
-                "self.glob", "EnvDraw", "envdraw",
+                    "locale", "encodings.utf_8", "codecs", "ast",
+                    "_ast", "rewrite", "envdraw2", "tkinter"}
+IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
+                "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
                 "GLOBAL_FRAME", "FUNCTION_TYPE"}
 
 class Tracker(object):
@@ -33,6 +34,9 @@ class Tracker(object):
         if not self._should_trace(current_function):
             return #self.trace
 
+        if current_function == self.test:
+            return
+        print(current_function.__module__)
         if frame in self.frames:
             name = self.frame_names[frame]
         else:

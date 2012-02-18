@@ -5,14 +5,15 @@ class AddImport(ast.NodeTransformer):
     def visit_Module(self, node):
         node.body.insert(
             0,
-            ast.Import(names=[ast.alias(name='envdraw2')]))
+            ast.Import(names=[ast.alias(name='envdraw')]))
         return node
                       
 
 class AddDecorator(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node):
-        node.decorator_list.insert(0, ast.Attribute(value=ast.Name(id='envdraw2', ctx=ast.Load()), attr='test', ctx=ast.Load()))
+        #node.decorator_list.insert(0, ast.Attribute(value=ast.Name(id='envdraw', ctx=ast.Load()), attr='test', ctx=ast.Load()))
+        node.decorator_list.insert(0, ast.Name(id='test', ctx=ast.Load()))
         self.generic_visit(node)
         return node
                 
