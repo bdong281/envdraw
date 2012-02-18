@@ -1,4 +1,4 @@
-import sys, inspect
+import sys, inspect, gc
 
 GLOBAL_FRAME = inspect.currentframe()
 
@@ -13,6 +13,17 @@ class Tracker(object):
         self.do_not_trace.add(fn)
 
     def trace(self, frame, event, args):
+
+        """
+        print(current_function, frame.f_locals)
+        frame.f_locals[current_function]
+        """
+        print(inspect.stack())
+        print(inspect.stack()[1][0].f_locals)
+        print(self._get_called_function())
+        input()
+        current_function = inspect.stack()[1][3]
+
         if frame in self.frames:
             name = self.frames[frame]
         else:
@@ -20,7 +31,8 @@ class Tracker(object):
             name = self.frames[frame]
             self.env_number += 1
         cleaned_frame = self.clean_frame(frame.f_locals)
-        print("({3}) event '{1}' in {0}: {2}".format(name, event, cleaned_frame, frame.f_lineno))
+        print("{4} {3} | event '{1}' in {0}: \n{2}\n" \
+                .format(name, event, cleaned_frame, frame.f_lineno, current_function))
         return self.trace
 
     def clean_frame(self, frame_locals):
@@ -38,6 +50,23 @@ class Tracker(object):
                 key == "GLOBAL_FRAME" or \
                 inspect.ismodule(value)
 
+    def _get_called_function(self):
+        """
+        Should only be called from trace
+        It is only here so I do not clutter up that function
+
+
+        NOT SURE IF THIS IS RIGHT
+
+        """
+        frame = inspect.currentframe().f_back.f_back
+        code = frame.f_code
+        global_obs = frame.f_globals
+        functype = type(lambda: 0)
+        for possible in gc.get_referrers(code):
+            if type(possible) == functype:
+                return possible
+
 if __name__ == "__main__":
 
     tracker = Tracker()
@@ -45,8 +74,10 @@ if __name__ == "__main__":
 
     def foo():
         x = 5
+        baz = lambda z: z*z
         def bar(y):
             return y+1
+        baz(x)
         bar(x)
         return x
 
