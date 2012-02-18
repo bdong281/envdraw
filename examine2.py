@@ -8,11 +8,11 @@ import random
 FUNCTION_TYPE = type(lambda x: 0)
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code",
                     "locale", "encodings.utf_8", "codecs", "ast",
-                    "_ast", "rewrite", "envdraw2", "tkinter"}
+                    "_ast", "rewrite", "envdraw2", "tkinter", "_functools", "_heapq"}
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
                 "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
                 "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
-                "_get_called_function", "TRACKER", "Env_Frame", "pprint"}
+                "_get_called_function", "TRACKER", "Env_Frame", "pprint", "funccall"}
 
 def _get_called_function():
     frame = inspect.currentframe().f_back.f_back
@@ -46,7 +46,6 @@ def funccall():
     print("CALL STACK APPEND", fn)
     tracker.current_frame = Env_Frame(f_back=tracker.static_link[fn])
     tracker.frames.append(tracker.current_frame)
-    tracker.active_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
 """
 
 def funccall(func):
@@ -55,7 +54,7 @@ def funccall(func):
     print('call:', func)
     fn = func
     #fn = func.orig
-    tracker.active_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
+    tracker.acctive_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
     print(fn)
 """
 
@@ -78,11 +77,6 @@ def funcreturn(val):
     print('returning from', fn)
     funcreturn.tracker.exiting_function(fn, py_fr, f_locals, f_globals)
     print('return:', val)
-    print(funcreturn.tracker.active_frames)
-    try:
-        del funcreturn.tracker.active_frames[fn]
-    except:
-        pass
     return val
 
 class Env_Frame(object):
@@ -98,19 +92,12 @@ class Env_Frame(object):
         self.f_forward.append(frame)
 
     def add_vars(self, dic):
-        print("setting var from ", self.variables, " to ", dic)
         dic = dict(dic)
         self.variables = dic
-        for i in self.variables:
-            try:
-                self.variables[i] = self.variables[i].orig
-            except:
-                pass
 
 class Tracker(object):
 
     def __init__(self):
-        self.active_frames = {}
         self.current_frame = Env_Frame() #this is global
         self.frames = [self.current_frame]
         self.call_stack = []
@@ -127,9 +114,8 @@ class Tracker(object):
         frame.add_vars(frame_vars)
         print(frame.variables)
         print("CALL STACK POP", fn)
+        self.call_stack[0].add_vars(self.clean_frame(py_fr.f_globals))
         self.current_frame = self.call_stack.pop()
-        for py_fr, env_fr in self.active_frames.values():
-            env_fr.add_vars(py_fr.f_locals)
 
     def clean_frame(self, frame_locals):
         to_remove = []
