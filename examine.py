@@ -1,7 +1,8 @@
 import sys, inspect, gc
 
 FUNCTION_TYPE = type(lambda x: 0)
-IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale"}
+IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", 
+                    "locale", "encodings.utf_8", "codecs"}
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", 
                 "self.glob", "EnvDraw", "envdraw",
                 "GLOBAL_FRAME", "FUNCTION_TYPE"}
@@ -15,15 +16,15 @@ class Tracker(object):
         self.env_number = 1
         self.envdraw = envdraw
         self.ignore_modules = IGNORE_MODULES
-        self.frame_names[self.glob] = "global"
-        self.frames[self.glob] = self.clean_frame(self.glob.f_locals)
+        #self.frame_names[self.glob] = "global"
+        #self.frames[self.glob] = self.clean_frame(self.glob.f_locals)
         
     def untrace(self, fn):
         self.ignore_modules.add(fn)
 
     def refresh_vars(self, frame):
-        self.frames[self.glob] = self.clean_frame(self.glob.f_locals)
-        while frame:
+        #self.frames[self.glob] = self.clean_frame(self.glob.f_locals)
+        while frame != self.glob:
             self.frames[frame] = self.clean_frame(frame.f_locals)
             frame = frame.f_back
 

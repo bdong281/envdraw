@@ -32,7 +32,8 @@ class EnvDraw(object):
                 Connector(self.canvas, value_draw, variable_draw)
 
         for f, ftk in self.frame_tk.items():
-            if f.f_back:
+            f_back = f.f_back
+            if f_back and f_back != GLOBAL_FRAME:
                 Connector(self.canvas, self.frame_tk[f.f_back], ftk)
             
 
