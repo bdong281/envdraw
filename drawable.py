@@ -137,15 +137,12 @@ class Frame(Draggable):
     @property
     def inhandle(self):
         x, y = self.pos
-        print("INHANDLE frame: {0}".format((x + self.width, y + self.height), (x,
-            y + self.height)))
         return (x + self.width, y + self.height - 20), (x, y + self.height -
                 20)
 
     @property
     def outhandle(self):
         x, y = self.pos
-        print("OUTHANDLE frame: {0}".format((x + self.width, y )))
         return x + self.width, y
 
 
@@ -184,7 +181,6 @@ class Function(Draggable):
 
     @property
     def inhandle(self):
-        print("INHANDLE function: {0}".format((self.pos,)))
         return (self.pos,)
 
     @property
@@ -208,7 +204,6 @@ class Variable(Connectable):
 
     @property
     def pos(self):
-        print(tuple(self.canvas.coords(self.text)[0:2]))
         return tuple(self.canvas.coords(self.text)[0:2])
 
     @property
@@ -224,8 +219,6 @@ class Variable(Connectable):
     @property
     def outhandle(self):
         x, y = self.pos
-        print("OUTHANDLE var: {0}".format((x + self.width, y +
-            self.height)))
         return round(x + self.width, -1), round(y + self.height // 2, -1)
 
 
@@ -309,7 +302,6 @@ class Connector(Drawable):
 
             while fringe:
                 cost, (state, path) = heappop(fringe)
-                print(cost)
                 if state == goal:
                     if len(path) == 1:
                         path = path + path
