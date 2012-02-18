@@ -1,9 +1,12 @@
+#! /usr/bin/env python3
+
 import inspect, gc
 from envdraw2 import *
 from drawable import *
 from pprint import pprint
 import tkinter as tk
 import random
+import sys
 
 FUNCTION_TYPE = type(lambda x: 0)
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code",
@@ -204,7 +207,7 @@ if __name__ == '__main__':
 
     exec(compile(new_tree, '<unknown>', 'exec'))
     """
-    tree = ast.parse(open('test.py').read())
+    tree = ast.parse(open(sys.argv[1]).read())
     new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
     #new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
 
