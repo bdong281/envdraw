@@ -62,14 +62,18 @@ class Frame(Draggable):
 
     prefix = "frame"
 
-    def __init__(self, canvas, x, y):
+    def __init__(self, canvas, x, y, globe=False):
         Draggable.__init__(self, canvas)
         self.variables = []
         self.values = []
         self.rect = canvas.create_rectangle(x, y, x+150, y+35, tag=self.tag,
                                             fill="white")
         canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
-        canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
+        if globe:
+            pass
+        else:
+            canvas.create_oval(x+145, y-5, x+155, y+5,
+                               tag=self.tag, fill="black")
 
     @property
     def pos(self):
@@ -96,6 +100,8 @@ class Frame(Draggable):
         Draggable.move(self, dx, dy)
         for variable in self.variables:
             variable.move(dx, dy)
+        for value in self.values:
+            value.move(dx, dy)
 
     def update(self):
         x, y = self.pos
@@ -204,11 +210,10 @@ class Value(Connectable):
         _, y1, _, y2 = self.canvas.bbox(self.text)
         return y2 - y1
 
-    # @property
-    # def inhandle(self):
-    #     x, y = self.pos
-    #     return x + self.width, y + self.height // 2
-
+    @property
+    def inhandle(self):
+        x, y = self.pos
+        return x - self.width, y + self.height // 2
 
 
 # Connector
@@ -240,14 +245,15 @@ if __name__ == '__main__':
     master = tk.Tk()
     canvas = tk.Canvas(master)
     canvas.pack(fill=tk.BOTH, expand=1)
-    f = Frame(canvas, 100, 100)
+    f = Frame(canvas, 100, 100, globe=True)
     foo = Variable(canvas, f, "foo")
-    Variable(canvas, f, "bar")
+    bar = Variable(canvas, f, "bar")
     Variable(canvas, f, "baz")
-    Value(canvas, f, "0")
-    Value(canvas, f, "1")
+    v = Value(canvas, f, "hello")
+    Value(canvas, f, "there")
     f1 = Frame(canvas, 350, 150)
     func = Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
     Connector(canvas, func, foo)
     Connector(canvas, f, f1)
+    Connector(canvas, v, bar)
     tk.mainloop()
