@@ -41,6 +41,8 @@ def funccall():
     tracker = funccall.tracker
     fn = _get_called_function()
     print("making a new frame for function call to ", fn)
+    tracker.call_stack.append(tracker.current_frame)
+    print("CALL STACK APPEND", fn)
     tracker.current_frame = Env_Frame(f_back=tracker.static_link[fn])
     tracker.frames.append(tracker.current_frame)
     tracker.active_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
@@ -109,6 +111,7 @@ class Tracker(object):
         self.active_frames = {}
         self.current_frame = Env_Frame() #this is global
         self.frames = [self.current_frame]
+        self.call_stack = []
         self.static_link = {}
         self.function_tk = {}
         self.frame_tk = {}
@@ -121,7 +124,9 @@ class Tracker(object):
         frame = self.current_frame
         frame.add_vars(frame_vars)
         print(frame.variables)
-        self.current_frame = frame.f_back
+        #self.current_frame = frame.f_back
+        print("CALL STACK POP", fn)
+        self.current_frame = self.call_stack.pop()
         for py_fr, env_fr in self.active_frames.values():
             env_fr.add_vars(py_fr.f_locals)
 

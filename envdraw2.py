@@ -56,6 +56,7 @@ class AddFuncCall(ast.NodeTransformer):
     def visit_FunctionDef(self, node):
         new = ast.Expr(value=ast.Call(func=ast.Name(id='funccall', ctx=ast.Load()), args=[], keywords=[]))
         node.body.insert(0, new)
+        self.generic_visit(node)
         return node
     
 
