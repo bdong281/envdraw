@@ -130,8 +130,14 @@ class Frame(Draggable):
     @property
     def inhandle(self):
         x, y = self.pos
-        return (x + self.width, y + self.height - 20), (x, y + self.height -
-                20)
+        leftside = tuple(((x, y + 20 * (i+1)) for i in
+                range(len(self.variables)+1)))
+        rightside = tuple(((x + self.width, y + 20 * (i+1)) for i in
+                range(len(self.variables)+1)))
+        topside = (x+40, y), (x+110, y)
+        downside = tuple(((x, y+self.height) for x, y in topside))
+        return leftside + rightside + topside + downside
+#        return (x + self.width, y + self.height - 20), (x, y + self.height - 20)
 
     @property
     def outhandle(self):
@@ -174,7 +180,8 @@ class Function(Draggable):
 
     @property
     def inhandle(self):
-        return (self.pos,)
+        x, y = self.pos
+        return (x, y+10), (x+150, y+50)
 
     @property
     def outhandle(self):
@@ -261,6 +268,7 @@ class Connector(Drawable):
     prefix = "connector"
 
     def __init__(self, canvas, head, tail):
+        self.inhandle = None
         Drawable.__init__(self, canvas)
         self.head = head
         self.head.add_connector(self)
@@ -277,9 +285,19 @@ class Connector(Drawable):
         self.canvas.coords(self.tag, *self.gen_coords(update=True))
         self.arrow.update()
 
-    def closest_inhandle(self):
-        return min(self.head.inhandle, key=lambda pt: \
-                self.distance(self.tail.outhandle, pt))
+    def closest_inhandle(self, update=False):
+        if update:
+            inhandle_to_number = {}
+            for handle in self.head.inhandle:
+                inhandle_to_number[handle] = 0
+            for connector in self.head.connectors:
+                if connector.inhandle in inhandle_to_number:
+                    inhandle_to_number[connector.inhandle] += 1
+            self.inhandle = min(self.head.inhandle, key=lambda pt:
+                    self.distance(self.tail.outhandle, pt) + 50 *
+                    inhandle_to_number[pt])
+        return self.inhandle
+
 
     def distance(self, point1, point2):
         (x1, y1), (x2, y2) = point1, point2
@@ -289,47 +307,47 @@ class Connector(Drawable):
         """
         Generates a sequence of coordinates for drawing an arrow
         """
-        (x1, y1), (x2, y2) = self.closest_inhandle(), self.tail.outhandle
+        (x1, y1), (x2, y2) = self.closest_inhandle(update=update), self.tail.outhandle
         return x1, y1, x2, y1, x2, y2
-        if update:
-            start, goal = self.tail.outhandle, self.closest_inhandle()
-            closed, fringe = set(), []
-            initial = (start, [start])
-            heappush(fringe, (0, initial))
-
-            while fringe:
-                cost, (state, path) = heappop(fringe)
-                if state == goal:
-                    if len(path) == 1:
-                        path = path + path
-                    self.line = reduce(lambda x, y: x + y, path, ())
-                    return self.line
-
-                if state not in closed:
-                    closed.add(state)
-                    for direction in [(10, 0), (-10, 0), (0, 10), (0, -10)]:
-                        point = (state[0] + direction[0], state[1] + direction[1])
-                        new_cost = cost + self.heuristic(point, goal)
-                        if len(path) > 1:
-                            (x1, y1), (x2, y2) = path[0], path[1]
-                            if point[0] == x1 == x2 or point[1] == y1 == y2:
-                                new_path = [point] + path[1:]
-                            else:
-                                new_path = [point] + path
-                                prev_point = new_path[1]
-                                if point[1] == prev_point[1]:
-                                    dist = point[0] - prev_point[0]
-                                else:
-                                    dist = point[1] - prev_point[1]
-                                if dist < 2:
-                                    new_cost += 100
-                                new_cost += 50
-                        else:
-                            new_path = [point] + path
-                        heappush(fringe, (new_cost, (point, new_path)))
-            return None
-        else:
-            return self.line
+#        if update:
+#            start, goal = self.tail.outhandle, self.closest_inhandle()
+#            closed, fringe = set(), []
+#            initial = (start, [start])
+#            heappush(fringe, (0, initial))
+#
+#            while fringe:
+#                cost, (state, path) = heappop(fringe)
+#                if state == goal:
+#                    if len(path) == 1:
+#                        path = path + path
+#                    self.line = reduce(lambda x, y: x + y, path, ())
+#                    return self.line
+#
+#                if state not in closed:
+#                    closed.add(state)
+#                    for direction in [(10, 0), (-10, 0), (0, 10), (0, -10)]:
+#                        point = (state[0] + direction[0], state[1] + direction[1])
+#                        new_cost = cost + self.heuristic(point, goal)
+#                        if len(path) > 1:
+#                            (x1, y1), (x2, y2) = path[0], path[1]
+#                            if point[0] == x1 == x2 or point[1] == y1 == y2:
+#                                new_path = [point] + path[1:]
+#                            else:
+#                                new_path = [point] + path
+#                                prev_point = new_path[1]
+#                                if point[1] == prev_point[1]:
+#                                    dist = point[0] - prev_point[0]
+#                                else:
+#                                    dist = point[1] - prev_point[1]
+#                                if dist < 2:
+#                                    new_cost += 100
+#                                new_cost += 50
+#                        else:
+#                            new_path = [point] + path
+#                        heappush(fringe, (new_cost, (point, new_path)))
+#            return None
+#        else:
+#            return self.line
 
 
 class Arrowhead(Drawable):
