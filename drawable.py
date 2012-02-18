@@ -36,6 +36,7 @@ class Connectable(Drawable):
         for connector in self.connectors:
             connector.update()
 
+
 class Draggable(Connectable):
 
     def __init__(self, canvas):
@@ -45,7 +46,8 @@ class Draggable(Connectable):
         self._drag_x, self._drag_y= None, None
         
     def move(self, dx, dy):
-        raise NotImplementedError
+        self.canvas.move(self.tag, dx, dy)
+        self.update_connectors()
 
     def mouse_start(self, event):
         self._drag_x, self._drag_y = event.x, event.y
@@ -84,6 +86,11 @@ class Frame(Draggable):
         x, y = self.pos
         return x + 10, y + len(self.variables) * 20
 
+    def move(self, dx, dy):
+        Draggable.move(self, dx, dy)
+        for variable in self.variables:
+            variable.move(dx, dy)
+
     def update(self):
         x, y = self.pos
         self.canvas.coords(self.rect, x, y, x+150, y+35+20*len(self.variables))
@@ -119,7 +126,6 @@ class Function(Draggable):
                                        text=name+"("+", ".join(arguments)+"):")
         self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
                                        text=body)
-
         
     @property
     def pos(self):
@@ -138,6 +144,10 @@ class Variable(Connectable):
         Connectable.__init__(self, canvas)
         x, y = frame.add_variable(self)
         self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":", tag=self.tag)
+
+    def move(self, dx, dy):
+        self.canvas.move(self.tag, dx, dy)
+        self.update_connectors()
 
     @property
     def pos(self):
@@ -180,7 +190,7 @@ class Connector(Drawable):
         """
         Redraws this Connector based on the new position of its head and tail.
         """
-        self.canvas.coords(self.tag, *(head.inhandle + tail.outhandle))
+        self.canvas.coords(self.tag, *(self.head.inhandle + self.tail.outhandle))
 
 if __name__ == '__main__':
     master = tk.Tk()
