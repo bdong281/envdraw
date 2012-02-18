@@ -65,6 +65,7 @@ class Frame(Draggable):
     def __init__(self, canvas, x, y):
         Draggable.__init__(self, canvas)
         self.variables = []
+        self.values = []
         self.rect = canvas.create_rectangle(x, y, x+150, y+35, tag=self.tag,
                                             fill="white")
         canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
@@ -85,6 +86,11 @@ class Frame(Draggable):
         self.update()
         x, y = self.pos
         return x + 10, y + len(self.variables) * 20
+
+    def add_value(self, value):
+        self.values.append(value)
+        x, y = self.pos
+        return x + 140, y + len(self.values) * 20
 
     def move(self, dx, dy):
         Draggable.move(self, dx, dy)
@@ -170,6 +176,41 @@ class Variable(Connectable):
         return x + self.width, y + self.height // 2
 
 
+class Value(Connectable):
+
+    prefix = "value"
+
+    def __init__(self, canvas, frame, name):
+        Connectable.__init__(self, canvas)
+        x, y = frame.add_value(self)
+        self.text = canvas.create_text(x, y, anchor=tk.NE, text=name,
+                                       tag=self.tag)
+
+    def move(self, dx, dy):
+        self.canvas.move(self.tag, dx, dy)
+        self.update_connectors()
+
+    @property
+    def pos(self):
+        return tuple(self.canvas.coords(self.text)[0:2])
+
+    @property
+    def width(self):
+        x1, _, x2, _ = self.canvas.bbox(self.text)
+        return x2 - x1
+
+    @property
+    def height(self):
+        _, y1, _, y2 = self.canvas.bbox(self.text)
+        return y2 - y1
+
+    # @property
+    # def inhandle(self):
+    #     x, y = self.pos
+    #     return x + self.width, y + self.height // 2
+
+
+
 # Connector
 
 class Connector(Drawable):
@@ -203,6 +244,8 @@ if __name__ == '__main__':
     foo = Variable(canvas, f, "foo")
     Variable(canvas, f, "bar")
     Variable(canvas, f, "baz")
+    Value(canvas, f, "0")
+    Value(canvas, f, "1")
     f1 = Frame(canvas, 350, 150)
     func = Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
     Connector(canvas, func, foo)
