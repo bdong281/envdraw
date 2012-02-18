@@ -60,7 +60,7 @@ class Frame(Draggable):
     def __init__(self, canvas, x, y):
         Draggable.__init__(self, canvas)
         self.variables = []
-        self.rect = canvas.create_rectangle(x, y, x+150, y+50, tag=self.tag,
+        self.rect = canvas.create_rectangle(x, y, x+150, y+35, tag=self.tag,
                                             fill="white")
         canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
         canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
@@ -84,7 +84,7 @@ class Frame(Draggable):
     def update(self):
         x, y = self.pos
         self.canvas.coords(self.rect, x, y, x+150,
-                           y+50+20*(len(self.variables)-1))
+                           y+35+20*len(self.variables))
 
 
 class Function(Draggable):
