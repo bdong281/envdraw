@@ -85,6 +85,25 @@ class Variable(Connectable):
         x, y = frame.add_variable(self)
         self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":")
 
+    @property
+    def pos(self):
+        return self.canvas.coords(self.text)[0:2]
+
+    @property
+    def width(self):
+        x1, _, x2, _ = self.canvas.bbox(self.text)
+        return x2 - x1
+
+    @property
+    def height(self):
+        _, y1, _, y2 = self.canvas.bbox(self.text)
+        return y2 - y1
+
+    @property
+    def handleout(self):
+        x, y = self.pos
+        return x + self.width, y + self.height // 2
+        
 
 # Connector
 
