@@ -60,6 +60,7 @@ class Draggable(Connectable):
 
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
+        self.update_connectors()
 
     def mouse_start(self, event):
         self._drag_x, self._drag_y = event.x, event.y
@@ -73,7 +74,6 @@ class Draggable(Connectable):
         coords = self.canvas.coords(self.tag)
         x, y = coords[0], coords[1]
         self.move(-(x % 10), -(y % 10))
-        self.update_connectors()
 
 
 
@@ -122,13 +122,6 @@ class Frame(Draggable):
             variable.move(dx, dy)
         for value in self.values:
             value.move(dx, dy)
-
-    def mouse_release(self, event):
-        Draggable.mouse_release(self, event)
-        for variable in self.variables:
-            variable.update_connectors()
-        for value in self.values:
-            value.update_connectors()
 
     def update(self):
         x, y = self.pos
@@ -201,6 +194,8 @@ class Variable(Connectable):
 
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
+        self.update_connectors()
+
 
     @property
     def pos(self):
@@ -234,7 +229,7 @@ class Value(Connectable):
 
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
-#        self.update_connectors()
+        self.update_connectors()
 
     @property
     def pos(self):
@@ -294,6 +289,8 @@ class Connector(Drawable):
         """
         Generates a sequence of coordinates for drawing an arrow
         """
+        (x1, y1), (x2, y2) = self.closest_inhandle(), self.tail.outhandle
+        return x1, y1, x2, y1, x2, y2
         if update:
             start, goal = self.tail.outhandle, self.closest_inhandle()
             closed, fringe = set(), []
