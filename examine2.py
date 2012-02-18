@@ -167,7 +167,7 @@ class Tracker(object):
             Connector(canvas, fr_tk, fn_tk)
 
     def place(self, canvas):
-        x, y = random.randint(50, 650), random.randint(50, 500)
+        x, y = random.randint(50, 600), random.randint(50, 500)
         x, y = x//10*10, y//10*10
         attempts = 0
         while len(canvas.find_overlapping(x-10, y-10, x+160, y+80)) > 0:
