@@ -43,7 +43,7 @@ class Frame(Connectable):
         self.variables = []
         self.rect = canvas.create_rectangle(x, y, x+150, y+200, tag=self.tag,
                                             fill="white")
-        canvas.create_oval(x+130, y-20, x+170, y+20, tag=self.tag, fill="white")
+        canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
         canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
 
     @property
@@ -65,10 +65,15 @@ class Function(Connectable):
 
     prefix = "function"
 
-    def __init__(self, canvas, x, y):
+    def __init__(self, canvas, x, y, name, arguments, body="..."):
         Connectable.__init__(self, canvas)
-        self.top = canvas.create_line(x, y, x+150, y, x+150, y+30, x+160, y+30)
-        canvas.create_line(x, y+20, x+10, y+20, x+10, y+50, x+160, y+50)
+        self.top = canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30)
+        canvas.create_line(x, y+30, x+10, y+30, x+10, y+60, x+150, y+60)
+        canvas.create_oval(x+125, y-15, x+155, y+15, tag=self.tag, fill="white")
+        canvas.create_oval(x+135, y-5, x+145, y+5, tag=self.tag, fill="black")
+        self.name = canvas.create_text(x, y+5, anchor=tk.NW,
+                                       text=name+"("+", ".join(arguments)+"):")
+        self.body = canvas.create_text(x+15, y+35, anchor=tk.NW, text=body)
 
 
 class Variable(Connectable):
@@ -107,5 +112,5 @@ if __name__ == '__main__':
     f = Frame(canvas, 100, 100)
     Variable(canvas, f, "foo")
     Variable(canvas, f, "bar")
-    Function(canvas, 100, 400)
+    Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
     tk.mainloop()
