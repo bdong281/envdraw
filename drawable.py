@@ -86,7 +86,7 @@ class Variable(Connectable):
     def __init__(self, canvas, frame, name):
         Connectable.__init__(self, canvas)
         x, y = frame.add_variable(self)
-        self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":")
+        self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":", tag=self.tag)
 
     @property
     def pos(self):
