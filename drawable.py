@@ -291,7 +291,7 @@ class Connector(Drawable):
             for handle in self.head.inhandle:
                 inhandle_to_number[handle] = 0
             for connector in self.head.connectors:
-                if connector.inhandle in inhandle_to_number:
+                if connector.inhandle in inhandle_to_number and connector.inhandle != self.inhandle:
                     inhandle_to_number[connector.inhandle] += 1
             self.inhandle = min(self.head.inhandle, key=lambda pt:
                     self.distance(self.tail.outhandle, pt) + 50 *
