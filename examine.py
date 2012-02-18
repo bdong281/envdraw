@@ -3,14 +3,14 @@ import sys, inspect, gc
 GLOBAL_FRAME = inspect.currentframe()
 
 class Tracker(object):
-    
+
     def __init__(self, ignore_modules = set()):
         self.frames = {}
         self.frames[GLOBAL_FRAME] = "global"
         self.env_number = 1
         self.ignore_modules = ignore_modules
         self.ignore_modules.add("inspect")
-        
+
     def untrace(self, fn):
         self.do_not_trace.add(fn)
 
@@ -86,6 +86,6 @@ if __name__ == "__main__":
         return x
 
     foo()
-    
+
     # for testing
     print(tracker.clean_frame(GLOBAL_FRAME.f_locals))

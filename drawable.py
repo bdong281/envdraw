@@ -110,7 +110,8 @@ class Frame(Draggable):
     @property
     def inhandle(self):
         x, y = self.pos
-        return x + 150, y + 35 + 20 * len(self.variables)
+        return (x + 150, y + 15 + 20 * len(self.variables)), (x,
+                y + 15 + 20*len(self.variables))
 
     @property
     def outhandle(self):
@@ -145,7 +146,7 @@ class Function(Draggable):
 
     @property
     def inhandle(self):
-        return self.pos
+        return (self.pos,)
 
 
 class Variable(Connectable):
@@ -213,7 +214,7 @@ class Value(Connectable):
     @property
     def inhandle(self):
         x, y = self.pos
-        return x - self.width, y + self.height // 2
+        return (x - self.width, y + self.height // 2),
 
 
 # Connector
@@ -231,15 +232,27 @@ class Connector(Drawable):
         self.head.add_connector(self)
         self.tail = tail
         self.tail.add_connector(self)
-        self.line = canvas.create_line(*(head.inhandle + tail.outhandle),
-                                        tag=self.tag)
-
+        canvas.create_line(*self.gen_coords(), tag=self.tag)
+                
     def update(self):
         """
         Redraws this Connector based on the new position of its head and tail.
         """
-        self.canvas.coords(self.tag,
-                           *(self.head.inhandle + self.tail.outhandle))
+        self.canvas.coords(self.tag, *self.gen_coords())
+
+    def closest_inhandle(self):
+        return min(self.head.inhandle, key=lambda pt: \
+                self.distance(self.tail.outhandle, pt))
+        
+    def distance(self, point1, point2):
+        (x1, y1), (x2, y2) = point1, point2
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def gen_coords(self):
+        (x1, y1), (x2, y2) = self.closest_inhandle(), self.tail.outhandle
+        return x1, y1, x2, y1, x2, y2
+
+
 
 if __name__ == '__main__':
     master = tk.Tk()
