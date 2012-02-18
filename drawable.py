@@ -40,8 +40,23 @@ class Frame(Connectable):
 
     def __init__(self, canvas, x, y):
         Connectable.__init__(self, canvas)
+        self.variables = []
         self.rect = canvas.create_rectangle(x, y, x+150, y+200, tag=self.tag)
 
+    @property
+    def pos(self):
+        return self.canvas.coords(self.rect)[0:2]
+
+    def add_variable(self, variable):
+        """
+        Adds a Variable to this Frame. Returns the position that the Variable
+        should be drawn at.
+        
+        TODO: Automatically grow frame when too many variables are defined.
+        """
+        self.variables.append(variable)
+        x, y = self.pos
+        return x + 10, y + len(self.variables) * 20
 
 class Function(Connectable):
 
@@ -51,6 +66,11 @@ class Function(Connectable):
 class Variable(Connectable):
 
     prefix = "variable"
+
+    def __init__(self, canvas, frame, name):
+        Connectable.__init__(self, canvas)
+        x, y = frame.add_variable(self)
+        self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":")
 
 
 # Connector
@@ -76,5 +96,7 @@ if __name__ == '__main__':
     master = tk.Tk()
     canvas = tk.Canvas(master)
     canvas.pack(fill=tk.BOTH, expand=1)
-    Frame(canvas, 100, 100)
+    f = Frame(canvas, 100, 100)
+    Variable(canvas, f, "foo")
+    Variable(canvas, f, "bar")
     tk.mainloop()
