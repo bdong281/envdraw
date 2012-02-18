@@ -41,7 +41,7 @@ class Frame(Connectable):
     def __init__(self, canvas, x, y):
         Connectable.__init__(self, canvas)
         self.variables = []
-        self.rect = canvas.create_rectangle(x, y, x+150, y+200, tag=self.tag,
+        self.rect = canvas.create_rectangle(x, y, x+150, y+50, tag=self.tag,
                                             fill="white")
         canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
         canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
@@ -58,8 +58,18 @@ class Frame(Connectable):
         TODO: Automatically grow frame when too many variables are defined.
         """
         self.variables.append(variable)
+        self.redraw()
         x, y = self.pos
         return x + 10, y + len(self.variables) * 20
+
+    def redraw(self):
+        x, y = self.pos
+        self.canvas.delete(self.tag)
+        self.rect = canvas.create_rectangle(x, y, x+150,
+                                            y+50+30*(len(self.variables)-1),
+                                            tag=self.tag, fill="white")
+        canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
+        canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
 
 class Function(Connectable):
 
@@ -67,8 +77,12 @@ class Function(Connectable):
 
     def __init__(self, canvas, x, y, name, arguments, body="..."):
         Connectable.__init__(self, canvas)
-        self.top = canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30,
-                                      tag=self.tag)
+        self.shape = canvas.create_polygon(x, y, x+140, y, x+140, y+30, x+150,
+                                           y+30, x+150, y+60, x+10, y+60, x+10,
+                                           y+30, x, y+30, tag=self.tag,
+                                           fill="white", outline="white")
+        canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30,
+                           tag=self.tag)
         canvas.create_line(x, y+30, x+10, y+30, x+10, y+60, x+150, y+60,
                            tag=self.tag)
         canvas.create_oval(x+125, y-15, x+155, y+15, tag=self.tag, fill="white")
