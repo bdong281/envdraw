@@ -29,6 +29,9 @@ class Connectable(Drawable):
     def pos(self):
         raise NotImplementedError
 
+    def add_connector(self, connector):
+        self.connectors.append(connector)
+
     def update_connectors(self):
         for connector in self.connectors:
             connector.update()
@@ -168,7 +171,9 @@ class Connector(Drawable):
     def __init__(self, canvas, head, tail):
         Drawable.__init__(self, canvas)
         self.head = head
+        self.head.add_connector(self)
         self.tail = tail
+        self.tail.add_connector(self)
         self.line = canvas.create_line(*(head.inhandle + tail.outhandle), tag=self.tag)
 
     def update(self):
