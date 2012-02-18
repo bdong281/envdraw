@@ -33,13 +33,32 @@ class Connectable(Drawable):
         for connector in self.connectors:
             connector.update()
 
+class Draggable(Connectable):
 
-class Frame(Connectable):
+    def __init__(self, canvas):
+        Connectable.__init__(self, canvas)
+        self.canvas.tag_bind(self.tag, '<Button-1>', self.mouse_start)
+        self.canvas.tag_bind(self.tag, '<B1-Motion>', self.mouse_drag)
+        self._drag_x, self._drag_y= None, None
+        
+    def move(self, dx, dy):
+        raise NotImplementedError
+
+    def mouse_start(self, event):
+        self._drag_x, self._drag_y = event.x, event.y
+
+    def mouse_drag(self, event):
+        dx, dy = event.x - self._drag_x, event.y - self._drag_y
+        self._drag_x, self._drag_y = event.x, event.y
+        self.move(dx, dy)
+    
+
+class Frame(Draggable):
 
     prefix = "frame"
 
     def __init__(self, canvas, x, y):
-        Connectable.__init__(self, canvas)
+        Draggable.__init__(self, canvas)
         self.variables = []
         self.rect = canvas.create_rectangle(x, y, x+150, y+35, tag=self.tag,
                                             fill="white")
@@ -77,12 +96,12 @@ class Frame(Connectable):
         return x + 150, y
 
 
-class Function(Connectable):
+class Function(Draggable):
 
     prefix = "function"
 
     def __init__(self, canvas, x, y, name, arguments, body="..."):
-        Connectable.__init__(self, canvas)
+        Draggable.__init__(self, canvas)
         self.shape = canvas.create_polygon(x, y, x+140, y, x+140, y+30, x+150,
                                            y+30, x+150, y+60, x+10, y+60, x+10,
                                            y+30, x, y+30, tag=self.tag,
@@ -98,6 +117,7 @@ class Function(Connectable):
         self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
                                        text=body)
 
+        
     @property
     def pos(self):
         return tuple(self.canvas.coords(self.shape)[0:2])
