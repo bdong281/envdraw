@@ -48,7 +48,7 @@ class Frame(Connectable):
 
     @property
     def pos(self):
-        return self.canvas.coords(self.rect)[0:2]
+        return tuple(self.canvas.coords(self.rect)[0:2])
 
     def add_variable(self, variable):
         """
@@ -92,6 +92,14 @@ class Function(Connectable):
         self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
                                        text=body)
 
+    @property
+    def pos(self):
+        return tuple(self.canvas.coords(self.shape)[0:2])
+
+    @property
+    def inhandle(self):
+        return self.pos
+
 
 class Variable(Connectable):
 
@@ -104,7 +112,7 @@ class Variable(Connectable):
 
     @property
     def pos(self):
-        return self.canvas.coords(self.text)[0:2]
+        return tuple(self.canvas.coords(self.text)[0:2])
 
     @property
     def width(self):
@@ -117,7 +125,7 @@ class Variable(Connectable):
         return y2 - y1
 
     @property
-    def handleout(self):
+    def outhandle(self):
         x, y = self.pos
         return x + self.width, y + self.height // 2
 
@@ -131,22 +139,25 @@ class Connector(Drawable):
 
     prefix = "connector"
 
-    def __init__(self, head, tail):
+    def __init__(self, canvas, head, tail):
+        Drawable.__init__(self, canvas)
         self.head = head
         self.tail = tail
+        self.line = canvas.create_line(*(head.inhandle + tail.outhandle), tag=self.tag)
 
     def update(self):
         """
         Redraws this Connector based on the new position of its head and tail.
         """
-        pass
+        self.canvas.coords(self.tag, *(head.inhandle + tail.outhandle))
 
 if __name__ == '__main__':
     master = tk.Tk()
     canvas = tk.Canvas(master)
     canvas.pack(fill=tk.BOTH, expand=1)
     f = Frame(canvas, 100, 100)
-    Variable(canvas, f, "foo")
+    foo = Variable(canvas, f, "foo")
     Variable(canvas, f, "bar")
-    Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
+    func = Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
+    Connector(canvas, func, foo)
     tk.mainloop()
