@@ -64,8 +64,17 @@ class Frame(Connectable):
 
     def update(self):
         x, y = self.pos
-        self.canvas.coords(self.rect, x, y, x+150,
-                           y+35+20*len(self.variables))
+        self.canvas.coords(self.rect, x, y, x+150, y+35+20*len(self.variables))
+
+    @property
+    def inhandle(self):
+        x, y = self.pos
+        return x + 150, y + 35 + 20 * len(self.variables)
+
+    @property
+    def outhandle(self):
+        x, y = self.pos
+        return x + 150, y
 
 
 class Function(Connectable):
@@ -156,6 +165,8 @@ if __name__ == '__main__':
     foo = Variable(canvas, f, "foo")
     Variable(canvas, f, "bar")
     Variable(canvas, f, "baz")
+    f1 = Frame(canvas, 350, 150)
     func = Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
     Connector(canvas, func, foo)
+    Connector(canvas, f, f1)
     tk.mainloop()
