@@ -58,18 +58,15 @@ class Frame(Connectable):
         TODO: Automatically grow frame when too many variables are defined.
         """
         self.variables.append(variable)
-        self.redraw()
+        self.update()
         x, y = self.pos
         return x + 10, y + len(self.variables) * 20
 
-    def redraw(self):
+    def update(self):
         x, y = self.pos
-        self.canvas.delete(self.tag)
-        self.rect = canvas.create_rectangle(x, y, x+150,
-                                            y+50+30*(len(self.variables)-1),
-                                            tag=self.tag, fill="white")
-        canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag, fill="white")
-        canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag, fill="black")
+        self.canvas.coords(self.rect, x, y, x+150,
+                           y+50+20*(len(self.variables)-1))
+
 
 class Function(Connectable):
 
@@ -158,6 +155,7 @@ if __name__ == '__main__':
     f = Frame(canvas, 100, 100)
     foo = Variable(canvas, f, "foo")
     Variable(canvas, f, "bar")
+    Variable(canvas, f, "baz")
     func = Function(canvas, 100, 400, "adder", ("k", "a"), "return k + n")
     Connector(canvas, func, foo)
     tk.mainloop()
