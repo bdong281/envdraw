@@ -158,7 +158,8 @@ class Tracker(object):
             for var, val in fr.variables.items():
                 variable_draw = Variable(canvas, fr_tk, var)
                 if type(val) == FUNCTION_TYPE:
-                    value_draw = Function(canvas, 200, 200, val.__name__,
+                    x, y = self.place(canvas)
+                    value_draw = Function(canvas, x, y, val.__name__,
                         inspect.getargspec(val).args)
                     self.function_tk[val] = value_draw
                 else:
