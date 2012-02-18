@@ -1,4 +1,5 @@
 import tkinter as tk
+import math
 
 class Drawable(object):
 
@@ -233,12 +234,14 @@ class Connector(Drawable):
         self.tail = tail
         self.tail.add_connector(self)
         canvas.create_line(*self.gen_coords(), tag=self.tag)
+        self.arrow = Arrowhead(canvas, self)
                 
     def update(self):
         """
         Redraws this Connector based on the new position of its head and tail.
         """
         self.canvas.coords(self.tag, *self.gen_coords())
+        self.arrow.update()
 
     def closest_inhandle(self):
         return min(self.head.inhandle, key=lambda pt: \
@@ -253,6 +256,46 @@ class Connector(Drawable):
         return x1, y1, x2, y1, x2, y2
 
 
+class Arrowhead(Drawable):
+
+    points = ((0, 0), (-15, -5), (-10, 0), (-15, 5))
+
+    def __init__(self, canvas, conn):
+        Drawable.__init__(self, canvas)
+        self.conn = conn
+        x, y = self.pos
+        angle = self.angle
+        self.head = self.canvas.create_polygon(*self.gen_coords(x, y, angle))
+
+    def update(self):
+        x, y = self.pos
+        angle = self.angle
+        self.canvas.coords(self.head, *self.gen_coords(x, y, angle))
+
+    @property
+    def pos(self):
+        x, y = self.conn.gen_coords()[0:2]
+        return x, y
+
+    @property
+    def angle(self):
+        x1, y1, x2, y2 = self.conn.gen_coords()[0:4]
+        result = math.atan2(y1 - y2, x1 - x2)
+        return result
+        
+    def gen_coords(self, x, y, angle):
+        pts = []
+        for pt_x, pt_y in Arrowhead.points:
+            rot_x, rot_y = self._rotate(pt_x, pt_y, angle)
+            pts.append(x + rot_x)
+            pts.append(y + rot_y)
+        return pts
+
+    def _rotate(self, x, y, angle):
+        c, s = math.cos(angle), math.sin(angle)
+        new_x = x * c - y * s
+        new_y = x * s + y * c
+        return new_x, new_y
 
 if __name__ == '__main__':
     master = tk.Tk()
