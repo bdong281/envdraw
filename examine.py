@@ -4,11 +4,13 @@ GLOBAL_FRAME = inspect.currentframe()
 
 class Tracker(object):
     
-    def __init__(self):
+    def __init__(self, ignore_modules = set()):
         self.frames = {}
         self.frames[GLOBAL_FRAME] = "global"
         self.env_number = 1
-
+        self.ignore_modules = ignore_modules
+        self.ignore_modules.add("inspect")
+        
     def untrace(self, fn):
         self.do_not_trace.add(fn)
 
@@ -18,11 +20,9 @@ class Tracker(object):
         print(current_function, frame.f_locals)
         frame.f_locals[current_function]
         """
-        print(inspect.stack())
-        print(inspect.stack()[1][0].f_locals)
-        print(self._get_called_function())
-        input()
-        current_function = inspect.stack()[1][3]
+        current_function = self._get_called_function()
+        if not self._should_trace(current_function):
+            return self.trace
 
         if frame in self.frames:
             name = self.frames[frame]
@@ -32,7 +32,7 @@ class Tracker(object):
             self.env_number += 1
         cleaned_frame = self.clean_frame(frame.f_locals)
         print("{4} {3} | event '{1}' in {0}: \n{2}\n" \
-                .format(name, event, cleaned_frame, frame.f_lineno, current_function))
+                .format(name, event, cleaned_frame, frame.f_lineno, current_function.__name__))
         return self.trace
 
     def clean_frame(self, frame_locals):
@@ -57,7 +57,6 @@ class Tracker(object):
 
 
         NOT SURE IF THIS IS RIGHT
-
         """
         frame = inspect.currentframe().f_back.f_back
         code = frame.f_code
@@ -66,6 +65,11 @@ class Tracker(object):
         for possible in gc.get_referrers(code):
             if type(possible) == functype:
                 return possible
+
+    def _should_trace(self, current_function):
+        return not inspect.isbuiltin(current_function) and \
+            not getattr(Tracker, current_function.__name__, None) == current_function and \
+            not getattr(current_function, "__module__", None) in self.ignore_modules
 
 if __name__ == "__main__":
 
