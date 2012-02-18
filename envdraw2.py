@@ -6,24 +6,23 @@ FUNCTION_TYPE = type(lambda x: 0)
 
 def funcdef(func):
     # do stuff here
-    #print('def:', func)
+    print('def:', func)
     return func
 
 def funcreturn(val):
     # do stuff here
-    #print('return:', val)
-    #print(inspect.currentframe().f_back.f_locals)
-    frame = inspect.currentframe().f_back
-    code = frame.f_code
-        #print(dir(code))
-    global_obs = frame.f_globals
-    result = None
-    for possible in gc.get_referrers(code):
-        if type(possible) == FUNCTION_TYPE:
-            result = possible
-            break
-    print(possible)
+    print('return:', val)
+    print(inspect.currentframe().f_back.f_locals)
+    print(_get_called_function())
     return val
+
+def _get_called_function():
+    frame = inspect.currentframe().f_back.f_back
+    code = frame.f_code
+    global_obs = frame.f_globals
+    for possible in gc.get_referrers(code):
+        if type(possible) == type(lambda x: 0):
+            return possible
 
 class AddFuncDef(ast.NodeTransformer):
 
