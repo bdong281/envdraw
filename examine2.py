@@ -171,6 +171,8 @@ class Tracker(object):
             Connector(canvas, fr_tk, fn_tk)
 
     def place(self, canvas):
+        if len(canvas.find_all()) == 0:
+            return 50, 50
         x, y = random.randint(50, 600), random.randint(50, 500)
         x, y = x//10*10, y//10*10
         attempts = 0
