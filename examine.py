@@ -1,18 +1,28 @@
 import sys, inspect, gc
 
 GLOBAL_FRAME = inspect.currentframe()
+FUNCTION_TYPE = type(lambda x: 0)
 
 class Tracker(object):
-
-    def __init__(self, ignore_modules = set()):
+    
+    def __init__(self, envdraw):
         self.frames = {}
-        self.frames[GLOBAL_FRAME] = "global"
+        self.frame_names = {}
+        self.frame_names[GLOBAL_FRAME] = "global"
         self.env_number = 1
-        self.ignore_modules = ignore_modules
+        self.envdraw = envdraw
+        self.ignore_modules = set()
         self.ignore_modules.add("inspect")
-
+        self.frames[GLOBAL_FRAME] = self.clean_frame(GLOBAL_FRAME.f_locals)
+        
     def untrace(self, fn):
-        self.do_not_trace.add(fn)
+        self.ignore_modules.add(fn)
+
+    def refresh_vars(self, frame):
+        self.frames[GLOBAL_FRAME] = self.clean_frame(GLOBAL_FRAME.f_locals)
+        while frame:
+            self.frames[frame] = self.clean_frame(frame.f_locals)
+            frame = frame.f_back
 
     def trace(self, frame, event, args):
 
@@ -25,14 +35,20 @@ class Tracker(object):
             return self.trace
 
         if frame in self.frames:
-            name = self.frames[frame]
+            name = self.frame_names[frame]
         else:
-            self.frames[frame] = "E{0}".format(self.env_number)
-            name = self.frames[frame]
+            self.frame_names[frame] = "E{0}".format(self.env_number)
+            self.frames[frame] = None
+            name = self.frame_names[frame]
             self.env_number += 1
+        self.refresh_vars(frame)
         cleaned_frame = self.clean_frame(frame.f_locals)
+        self.envdraw.redraw()
+        print(self.clean_frame(GLOBAL_FRAME.f_locals))
         print("{4} {3} | event '{1}' in {0}: \n{2}\n" \
-                .format(name, event, cleaned_frame, frame.f_lineno, current_function.__name__))
+                .format(name, event, cleaned_frame, 
+                    frame.f_lineno, current_function.__name__))
+
         return self.trace
 
     def clean_frame(self, frame_locals):
@@ -47,8 +63,9 @@ class Tracker(object):
 
     def _should_clean(self, key, value):
         return key.startswith("__") or \
-                key == "GLOBAL_FRAME" or \
-                inspect.ismodule(value)
+                key in {"GLOBAL_FRAME", "EnvDraw", "envdraw", "FUNCTION_TYPE"} or \
+                inspect.ismodule(value) or \
+                getattr(value, "__module__", None) in self.ignore_modules
 
     def _get_called_function(self):
         """
@@ -61,9 +78,8 @@ class Tracker(object):
         frame = inspect.currentframe().f_back.f_back
         code = frame.f_code
         global_obs = frame.f_globals
-        functype = type(lambda: 0)
         for possible in gc.get_referrers(code):
-            if type(possible) == functype:
+            if type(possible) == FUNCTION_TYPE:
                 return possible
 
     def _should_trace(self, current_function):
@@ -73,7 +89,7 @@ class Tracker(object):
 
 if __name__ == "__main__":
 
-    tracker = Tracker()
+    tracker = Tracker(None)
     sys.settrace(tracker.trace)
 
     def foo():
@@ -87,5 +103,4 @@ if __name__ == "__main__":
 
     foo()
 
-    # for testing
-    print(tracker.clean_frame(GLOBAL_FRAME.f_locals))
+    input()
