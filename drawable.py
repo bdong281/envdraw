@@ -67,13 +67,16 @@ class Function(Connectable):
 
     def __init__(self, canvas, x, y, name, arguments, body="..."):
         Connectable.__init__(self, canvas)
-        self.top = canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30)
-        canvas.create_line(x, y+30, x+10, y+30, x+10, y+60, x+150, y+60)
+        self.top = canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30,
+                                      tag=self.tag)
+        canvas.create_line(x, y+30, x+10, y+30, x+10, y+60, x+150, y+60,
+                           tag=self.tag)
         canvas.create_oval(x+125, y-15, x+155, y+15, tag=self.tag, fill="white")
         canvas.create_oval(x+135, y-5, x+145, y+5, tag=self.tag, fill="black")
-        self.name = canvas.create_text(x, y+5, anchor=tk.NW,
+        self.name = canvas.create_text(x, y+5, tag=self.tag, anchor=tk.NW,
                                        text=name+"("+", ".join(arguments)+"):")
-        self.body = canvas.create_text(x+15, y+35, anchor=tk.NW, text=body)
+        self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
+                                       text=body)
 
 
 class Variable(Connectable):
@@ -103,7 +106,7 @@ class Variable(Connectable):
     def handleout(self):
         x, y = self.pos
         return x + self.width, y + self.height // 2
-        
+
 
 # Connector
 
