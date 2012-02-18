@@ -149,6 +149,11 @@ class Function(Draggable):
     def inhandle(self):
         return (self.pos,)
 
+    @property
+    def outhandle(self):
+        x, y = self.pos
+        return x+140, y
+
 
 class Variable(Connectable):
 
