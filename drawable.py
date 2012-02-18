@@ -44,7 +44,7 @@ class Draggable(Connectable):
         self.canvas.tag_bind(self.tag, '<Button-1>', self.mouse_start)
         self.canvas.tag_bind(self.tag, '<B1-Motion>', self.mouse_drag)
         self._drag_x, self._drag_y= None, None
-        
+
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
         self.update_connectors()
@@ -56,7 +56,7 @@ class Draggable(Connectable):
         dx, dy = event.x - self._drag_x, event.y - self._drag_y
         self._drag_x, self._drag_y = event.x, event.y
         self.move(dx, dy)
-    
+
 
 class Frame(Draggable):
 
@@ -126,7 +126,7 @@ class Function(Draggable):
                                        text=name+"("+", ".join(arguments)+"):")
         self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
                                        text=body)
-        
+
     @property
     def pos(self):
         return tuple(self.canvas.coords(self.shape)[0:2])
@@ -143,7 +143,8 @@ class Variable(Connectable):
     def __init__(self, canvas, frame, name):
         Connectable.__init__(self, canvas)
         x, y = frame.add_variable(self)
-        self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":", tag=self.tag)
+        self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":",
+                                       tag=self.tag)
 
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
@@ -184,13 +185,15 @@ class Connector(Drawable):
         self.head.add_connector(self)
         self.tail = tail
         self.tail.add_connector(self)
-        self.line = canvas.create_line(*(head.inhandle + tail.outhandle), tag=self.tag)
+        self.line = canvas.create_line(*(head.inhandle + tail.outhandle),
+                                        tag=self.tag)
 
     def update(self):
         """
         Redraws this Connector based on the new position of its head and tail.
         """
-        self.canvas.coords(self.tag, *(self.head.inhandle + self.tail.outhandle))
+        self.canvas.coords(self.tag,
+                           *(self.head.inhandle + self.tail.outhandle))
 
 if __name__ == '__main__':
     master = tk.Tk()
