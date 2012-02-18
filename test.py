@@ -14,7 +14,10 @@ def square(x):
     return x*x
 
 def double(f):
+    y = 1
     def doubler(x):
+        nonlocal y
+        y += 1
         return f(f(x))
     return doubler
 fourth_power = double(square)
