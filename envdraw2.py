@@ -4,17 +4,15 @@ import gc
 
 FUNCTION_TYPE = type(lambda x: 0)
 
-def funccall(func):
+"""
+def funccall():
     print('call:', func)
     pass
 
 def funcdef(func):
     # do stuff here
     print('def:', func)
-    def new_f(*args, **kargs):
-        funccall(func)
-        return func(*args, **kargs)
-    return new_f
+    return func
 
 def funcreturn(val):
     # do stuff here
@@ -22,6 +20,7 @@ def funcreturn(val):
     #print(inspect.currentframe().f_back.f_locals)
     print('return2:', _get_called_function())
     return val
+"""
 
 def _get_called_function():
     frame = inspect.currentframe().f_back.f_back
