@@ -117,7 +117,7 @@ class Tracker(object):
         frame.add_vars(frame_vars)
         print(frame.variables)
         print("CALL STACK POP", fn)
-        self.call_stack[0].add_vars(self.clean_frame(py_fr.f_globals))
+        #self.call_stack[0].add_vars(self.clean_frame(py_fr.f_globals))
         self.current_frame = self.call_stack.pop()
 
     def clean_frame(self, frame_locals):
@@ -137,6 +137,7 @@ class Tracker(object):
                 getattr(value, "__module__", None) in IGNORE_MODULES
 
     def draw(self):
+        self.current_frame.add_vars(self.clean_frame(inspect.currentframe().f_globals))
         master = tk.Tk()
         canvas = tk.Canvas(master, width=800, height=600)
         canvas.pack(fill=tk.BOTH, expand=1)
