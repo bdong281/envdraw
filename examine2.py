@@ -120,7 +120,7 @@ class Tracker(object):
 
     def draw(self, cur_globals=None):
         if cur_globals is None:
-            cur_frame = inspect.currentframe().f_globals
+            cur_globals = inspect.currentframe().f_globals
         self.current_frame.add_vars(self.clean_frame(cur_globals))
         master = tk.Tk()
         canvas = tk.Canvas(master, width=800, height=600)
