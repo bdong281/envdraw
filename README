@@ -1,0 +1,10 @@
+Documentation should probably go here.
+
+TODO:
+	- Get interactive mode to refresh the same window instead of drawing a
+	  new window after each statement.
+	- Allow interactive movement of items in display window.
+	- Resolve nonlocal bindings and updates correctly.
+	- Draw box and pointer diagrams for builtin sequence types.
+	- Draw some useful representation of user defined classes.
+	- Write a proper test suite and test script.
