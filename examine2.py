@@ -118,10 +118,10 @@ class Tracker(object):
                 inspect.ismodule(value) or \
                 getattr(value, "__module__", None) in IGNORE_MODULES
 
-    def draw(self, current_frame=None):
-        if current_frame is None:
-            current_frame = inspect.currentframe()
-        self.current_frame.add_vars(self.clean_frame(current_frame.f_globals))
+    def draw(self, cur_globals=None):
+        if cur_globals is None:
+            cur_frame = inspect.currentframe().f_globals
+        self.current_frame.add_vars(self.clean_frame(cur_globals))
         master = tk.Tk()
         canvas = tk.Canvas(master, width=800, height=600)
         canvas.pack(fill=tk.BOTH, expand=1)

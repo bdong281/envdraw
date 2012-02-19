@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
+"""Interactive front end for EnvDraw.
+
+This was added by Tom Magrino (tmagrino@berkeley.edu)
+"""
+
 import ast, inspect
 from code import InteractiveConsole, compile_command
 from examine2 import *
+from pprint import pprint
 
 class EnvDrawConsole(InteractiveConsole):
     """InteractiveConsole for the EnvDraw program."""
@@ -16,7 +22,7 @@ class EnvDrawConsole(InteractiveConsole):
                                                             AddFuncDef().visit(tree))))
                 compiled_code = compile(new_tree, filename, symbol)
                 self.runcode(compiled_code)
-                TRACKER.draw(inspect.currentframe())
+                TRACKER.draw(self.locals)
                 return False
             else:
                 return InteractiveConsole.runsource(self, source, filename, symbol)
@@ -25,8 +31,7 @@ class EnvDrawConsole(InteractiveConsole):
             return False
 
     def runcode(self, code):
-        #print("code:", code)
-        return InteractiveConsole.runcode(self, code)
+        InteractiveConsole.runcode(self, code)
 
 TRACKER = Tracker()
 funcdef.tracker = TRACKER
