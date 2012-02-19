@@ -4,24 +4,6 @@ import gc
 
 FUNCTION_TYPE = type(lambda x: 0)
 
-"""
-def funccall():
-    print('call:', func)
-    pass
-
-def funcdef(func):
-    # do stuff here
-    print('def:', func)
-    return func
-
-def funcreturn(val):
-    # do stuff here
-    print('return:', val)
-    #print(inspect.currentframe().f_back.f_locals)
-    print('return2:', _get_called_function())
-    return val
-"""
-
 def _get_called_function():
     frame = inspect.currentframe().f_back.f_back
     code = frame.f_code
@@ -62,7 +44,6 @@ class AddFuncCall(ast.NodeTransformer):
 
 if __name__ == '__main__':
     tree = ast.parse(open('test.py').read())
-    #new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
     new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
 
     exec(compile(new_tree, '<unknown>', 'exec'))
