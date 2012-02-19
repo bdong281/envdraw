@@ -33,10 +33,8 @@ class EnvDrawConsole(InteractiveConsole):
     def runcode(self, code):
         InteractiveConsole.runcode(self, code)
 
-TRACKER = Tracker()
-funcdef.tracker = TRACKER
-funcreturn.tracker = TRACKER
-funccall.tracker = TRACKER
 
 if __name__ == "__main__":
-    EnvDrawConsole().interact()
+    local_bindings = {v : globals()[v] for v in IGNORE_VARS if v in
+                      globals().keys()}
+    EnvDrawConsole(locals=local_bindings).interact()
