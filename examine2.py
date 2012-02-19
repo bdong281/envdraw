@@ -25,22 +25,13 @@ def _get_called_function():
         if type(possible) == type(lambda x: 0):
             return possible
 
+
 def funcdef(func):
     funcdef.tracker.defined_function(func)
     print('def:', func)
     return func
 
-"""
-def funcdef(func):
-    def new_f(*args, **kargs):
-        funccall(func)
-        return func(*args, **kargs)
-    new_f.orig = func
-    funcdef.tracker.defined_function(new_f.orig)
-    print('def:', func)
-    return new_f
 
-"""
 def funccall():
     tracker = funccall.tracker
     fn = _get_called_function()
@@ -49,17 +40,7 @@ def funccall():
     print("CALL STACK APPEND", fn)
     tracker.current_frame = Env_Frame(f_back=tracker.static_link[fn])
     tracker.frames.append(tracker.current_frame)
-"""
 
-def funccall(func):
-    tracker = funccall.tracker
-    tracker.current_frame = Env_Frame(f_back=tracker.current_frame)
-    print('call:', func)
-    fn = func
-    #fn = func.orig
-    tracker.acctive_frames[fn] = (inspect.currentframe().f_back, tracker.current_frame)
-    print(fn)
-"""
 
 def funcreturn(val):
     py_fr = inspect.currentframe().f_back
@@ -82,6 +63,7 @@ def funcreturn(val):
     print('return:', val)
     return val
 
+
 class Env_Frame(object):
     def __init__(self, f_back=None, tk=None):
         self.variables = {}
@@ -97,6 +79,7 @@ class Env_Frame(object):
     def add_vars(self, dic):
         dic = dict(dic)
         self.variables = dic
+
 
 class Tracker(object):
 
@@ -117,7 +100,6 @@ class Tracker(object):
         frame.add_vars(frame_vars)
         print(frame.variables)
         print("CALL STACK POP", fn)
-        #self.call_stack[0].add_vars(self.clean_frame(py_fr.f_globals))
         self.current_frame = self.call_stack.pop()
 
     def clean_frame(self, frame_locals):
@@ -136,8 +118,10 @@ class Tracker(object):
                 inspect.ismodule(value) or \
                 getattr(value, "__module__", None) in IGNORE_MODULES
 
-    def draw(self):
-        self.current_frame.add_vars(self.clean_frame(inspect.currentframe().f_globals))
+    def draw(self, current_frame=None):
+        if current_frame is None:
+            current_frame = inspect.currentframe()
+        self.current_frame.add_vars(self.clean_frame(current_frame.f_globals))
         master = tk.Tk()
         canvas = tk.Canvas(master, width=800, height=600)
         canvas.pack(fill=tk.BOTH, expand=1)
@@ -184,21 +168,16 @@ class Tracker(object):
             attempts += 1
         return x, y
 
+
 TRACKER = Tracker()
 funcdef.tracker = TRACKER
 funcreturn.tracker = TRACKER
 funccall.tracker = TRACKER
 
-if __name__ == '__main__':
-    """
-    tree = ast.parse(open('test.py').read())
-    new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
 
-    exec(compile(new_tree, '<unknown>', 'exec'))
-    """
+if __name__ == '__main__':
     tree = ast.parse(open(sys.argv[1]).read())
     new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
-    #new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
 
     exec(compile(new_tree, '<unknown>', 'exec'))
 
