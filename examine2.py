@@ -9,9 +9,9 @@ import random
 import sys
 
 FUNCTION_TYPE = type(lambda x: 0)
-IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code",
-                    "locale", "encodings.utf_8", "codecs", "ast",
-                    "_ast", "rewrite", "envdraw2", "tkinter", "_functools", "_heapq"}
+IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
+                  "encodings.utf_8", "codecs", "ast", "_ast", "rewrite",
+                  "envdraw2", "tkinter", "_functools", "_heapq", "util"}
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
                 "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
                 "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
