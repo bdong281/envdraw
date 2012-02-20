@@ -1,83 +1,59 @@
-from examine import *
-import tkinter as tk
-from drawable import *
 import ast
-from rewrite import *
-import random
+import inspect
+import gc
 
-GLOBAL_FRAME = inspect.currentframe()
+FUNCTION_TYPE = type(lambda x: 0)
 
-def test(f):
-    try:
-        envdraw = test.envdraw
-        current = inspect.currentframe().f_back
-        frame = envdraw.tracker.clean_frame(inspect.currentframe().f_back.f_locals)
-        envdraw.static_link[f] = current
-        print(f.__name__, frame)
-    except:
-        print("exception")
+def _get_called_function():
+    frame = inspect.currentframe().f_back.f_back
+    code = frame.f_code
+    global_obs = frame.f_globals
+    for possible in gc.get_referrers(code):
+        if type(possible) == FUNCTION_TYPE:
+            return possible
 
-    return f
+class AddFuncDef(ast.NodeTransformer):
+    """NodeTransformer for asts which takes each function defintion (either by
+    a def statement or by a lambda expression) and uses the funcdef decorator
+    with the function (as defined in examine2.py).
+    """
 
-class EnvDraw(object):
+    def visit_FunctionDef(self, node):
+        """Perform transformation on def statements.  Simply add the decorator
+        to the function.
+        """
+        node.decorator_list.insert(0, ast.Name(id='funcdef', ctx=ast.Load()))
+        self.generic_visit(node)
+        return node
 
-    def __init__(self):
-        self.master = tk.Tk()
-        self.canvas = tk.Canvas(self.master, width=800, height=600)
-        self.canvas.pack(fill=tk.BOTH, expand=1)
-        self.tracker = Tracker(self, GLOBAL_FRAME)
-        self.frame_tk = {}
-        self.function_tk = {}
-        self.static_link = {}
+    def visit_Lambda(self, node):
+        """Perform transformation on lambda expressions.  Set the value of the
+        lambda to be the result of calling funcdef on the original function.
+        """
+        new = ast.Call(func=ast.Name(id='funcdef', ctx=ast.Load()), args=[node], keywords=[])
+        self.generic_visit(node)
+        return new
 
-    def redraw(self):
-        self.frame_tk = {}
-        self.canvas.delete(tk.ALL)
-        frames = self.tracker.frames
-        for frame in frames:
-            x, y = self.place()
-            f = Frame(self.canvas, x, y)
-            self.frame_tk[frame] = f
-            for var, val in frames[frame].items():
-                variable_draw = Variable(self.canvas, f, var)
-                if type(val) == FUNCTION_TYPE:
-                    value_draw = Function(self.canvas, 200, 200,
-                        val.__name__, inspect.getargspec(val).args)
-                    self.function_tk[val] = value_draw
-                else:
-                    value_draw = Value(self.canvas, f, val)
-                Connector(self.canvas, value_draw, variable_draw)
+    
+class AddFuncReturn(ast.NodeTransformer):
+    
+    def visit_Return(self, node):
+        new = ast.Call(func=ast.Name(id='funcreturn', ctx=ast.Load()), args=[node.value], keywords=[])
+        self.generic_visit(node)
+        node.value = new
+        return node
 
-        for f, ftk in self.frame_tk.items():
-            f_back = f.f_back
-            if f_back and f_back != GLOBAL_FRAME:
-                Connector(self.canvas, self.frame_tk[f.f_back], ftk)
+class AddFuncCall(ast.NodeTransformer):
 
-        for fn, fr in self.static_link.items():
-            fn_tk = self.function_tk[fn]
-            fr_tk = self.frame_tk[fr]
-            Connector(self.canvas, fr_tk, fn_tk)
+    def visit_FunctionDef(self, node):
+        new = ast.Expr(value=ast.Call(func=ast.Name(id='funccall', ctx=ast.Load()), args=[], keywords=[]))
+        node.body.insert(0, new)
+        self.generic_visit(node)
+        return node
+    
 
-    def place(self):
-        x, y = random.randint(50, 650), random.randint(50, 500)
-        x, y = x//10*10, y//10*10
-        attempts = 0
-        while len(self.canvas.find_overlapping(x-10, y-10, x+160, y+80)) > 0:
-            if attempts > 30:
-                break
-            x, y = random.randint(50, 650), random.randint(50, 500)
-            x, y = x//10*10, y//10*10
-            attempts += 1
-        return x, y
-
-test.envdraw = EnvDraw()
-#exec(compile(open("test.py").read(), "test.py", 'exec'))
-if __name__ == "__main__":
-    ENVDRAW = test.envdraw
-    ENVDRAW.tracker.test = test
-    sys.settrace(ENVDRAW.tracker.trace)
+if __name__ == '__main__':
     tree = ast.parse(open('test.py').read())
-    #new_tree = ast.fix_missing_locations(AddDecorator().visit(AddImport().visit(tree)))
-    new_tree = ast.fix_missing_locations(AddDecorator().visit(tree))
-    eval(compile(new_tree, 'test.py', 'exec'))
-    input()
+    new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
+
+    exec(compile(new_tree, '<unknown>', 'exec'))
