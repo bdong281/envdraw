@@ -3,7 +3,7 @@
 import inspect, gc
 from envdraw2 import *
 from drawable import *
-from pprint import pprint
+from util import *
 import tkinter as tk
 import random
 import sys
@@ -28,16 +28,16 @@ def _get_called_function():
 
 def funcdef(func):
     funcdef.tracker.defined_function(func)
-    print('def:', func)
+    debug_print('def:', func)
     return func
 
 
 def funccall():
     tracker = funccall.tracker
     fn = _get_called_function()
-    print("making a new frame for function call to ", fn)
+    debug_print("making a new frame for function call to ", fn)
     tracker.call_stack.append(tracker.current_frame)
-    print("CALL STACK APPEND", fn)
+    debug_print("CALL STACK APPEND", fn)
     tracker.current_frame = Env_Frame(f_back=tracker.static_link[fn])
     tracker.frames.append(tracker.current_frame)
 
@@ -52,15 +52,15 @@ def funcreturn(val):
     except:
         pass
     args = inspect.getargspec(fn).args
-    print(fn.__closure__)
+    debug_print(fn.__closure__)
     if fn.__closure__:
         closures = set([x.cell_contents for x in fn.__closure__])
         for k,v in py_fr.f_locals.items():
             if v in closures and k not in args:
                 del f_locals[k]
-    print('returning from', fn)
+    debug_print('returning from', fn)
     funcreturn.tracker.exiting_function(fn, py_fr, f_locals, f_globals)
-    print('return:', val)
+    debug_print('return:', val)
     return val
 
 
@@ -98,8 +98,8 @@ class Tracker(object):
     def exiting_function(self, fn, py_fr, frame_vars, glob):
         frame = self.current_frame
         frame.add_vars(frame_vars)
-        print(frame.variables)
-        print("CALL STACK POP", fn)
+        debug_print(frame.variables)
+        debug_print("CALL STACK POP", fn)
         self.current_frame = self.call_stack.pop()
 
     def clean_frame(self, frame_locals):
@@ -147,9 +147,9 @@ class Tracker(object):
             if f_back:
                 Connector(canvas, self.frame_tk[f.f_back], ftk)
 
-        pprint(self.static_link)
+        debug_pprint(self.static_link)
         for fn, fr in self.static_link.items():
-            print(fn, fr.variables)
+            debug_print(fn, fr.variables)
             fn_tk = self.function_tk[fn]
             fr_tk = self.frame_tk[fr]
             Connector(canvas, fr_tk, fn_tk)
@@ -181,8 +181,9 @@ if __name__ == '__main__':
 
     exec(compile(new_tree, '<unknown>', 'exec'))
 
-    pprint([v.variables for v in TRACKER.frames])
-    print()
-    pprint(TRACKER.frames)
+    debug_pprint([v.variables for v in TRACKER.frames])
+    debug_print()
+    debug_pprint(TRACKER.frames)
+
     TRACKER.draw()
     input()
