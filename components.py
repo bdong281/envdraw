@@ -129,6 +129,7 @@ class Variable(Connectable):
 
     def set_pos(self, x, y):
         self.canvas.move(self.tag, x - self.pos[0], y - self.pos[1])
+        self.update_connectors()
 
     @property
     def pos(self):
@@ -167,6 +168,7 @@ class Value(Connectable):
 
     def set_pos(self, x, y):
         self.canvas.move(self.tag, x - self.pos[0], y - self.pos[1])
+        self.update_connectors()
 
     @property
     def pos(self):
