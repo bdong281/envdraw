@@ -49,6 +49,16 @@ class AddFuncReturn(ast.NodeTransformer):
         node.value = new
         return node
 
+    def visit_Lambda(self, node):
+        """Perform the equivalent transformation on the result of the lambda
+        statement's evaluation.
+        """
+        new_body = ast.Call(func=ast.Name(id='funcreturn', ctx=ast.Load()),
+                            args=[node.body], keywords=[])
+        node.body = new_body
+        self.generic_visit(node)
+        return node
+
 class AddFuncCall(ast.NodeTransformer):
     """Modify function calls to start with a call to funccall."""
 
@@ -58,7 +68,27 @@ class AddFuncCall(ast.NodeTransformer):
         node.body.insert(0, new)
         self.generic_visit(node)
         return node
-    
+
+    def visit_Lambda(self, node):
+        """replace a lambda expression of the form:
+            lambda args: expr
+        with
+            lambda args: (funccall(), expr)[1]
+        To simulate the same effect as calling it at the beginning of the
+        equivalent function definition and reference.
+        """
+        call_to_funccall = ast.Call(func=ast.Name(id='funccall',
+                                                  ctx=ast.Load()), args=[],
+                                    keywords=[])
+        tuple_result = ast.Tuple(elts=[call_to_funccall, node.body],
+                                 ctx=ast.Load())
+        replacement = ast.Subscript(value=tuple_result,
+                                    slice=ast.Index(value=ast.Num(n=1)),
+                                    ctx=ast.Load())
+        node.body = replacement
+        self.generic_visit(node)
+        return node
+
 
 if __name__ == '__main__':
     tree = ast.parse(open('test.py').read())
