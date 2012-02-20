@@ -8,14 +8,9 @@ import tkinter as tk
 import random
 import sys
 
+
 FUNCTION_TYPE = type(lambda x: 0)
-IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
-                  "encodings.utf_8", "codecs", "ast", "_ast", "rewrite",
-                  "envdraw", "tkinter", "_functools", "_heapq", "util"}
-IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
-                "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
-                "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
-                "_get_called_function", "TRACKER", "EnvFrame", "pprint", "funccall"}
+
 
 def _get_called_function():
     frame = inspect.currentframe().f_back.f_back
@@ -33,13 +28,9 @@ def funcdef(func):
 
 
 def funccall():
-    tracker = funccall.tracker
     fn = _get_called_function()
     debug_print("making a new frame for function call to ", fn)
-    tracker.call_stack.append(tracker.current_frame)
-    debug_print("CALL STACK APPEND", fn)
-    tracker.current_frame = EnvFrame(f_back=tracker.static_link[fn])
-    tracker.frames.append(tracker.current_frame)
+    funccall.tracker.enter_function(fn)
 
 
 def funcreturn(val):
@@ -53,59 +44,57 @@ def funcreturn(val):
         pass
     args = inspect.getargspec(fn).args
     debug_print(fn.__closure__)
+    # If there are "free" variables, variables that are used but not defined in
+    # the current scope
     if fn.__closure__:
         closures = set([x.cell_contents for x in fn.__closure__])
-        for k,v in py_fr.f_locals.items():
+        for k,v in f_locals.items():
             if v in closures and k not in args:
                 del f_locals[k]
     debug_print('returning from', fn)
-    funcreturn.tracker.exiting_function(fn, py_fr, f_locals, f_globals)
+    funcreturn.tracker.exit_function(fn, py_fr, f_locals)
     debug_print('return:', val)
     return val
-
-
-class EnvFrame(object):
-    """Represents a frame in the environment diagram."""
-
-    def __init__(self, f_back=None, tk=None):
-        self.variables = {}
-        self.f_back = f_back
-        self.f_forward = []
-
-    def extends(self, frame):
-        """Set the frame which this EnvFrame is extending."""
-        self.f_back = frame
-
-    def extended_by(self, frame):
-        """Add a frame that extends this EnvFrame."""
-        self.f_forward.append(frame)
-
-    def add_vars(self, dic):
-        """Add a series of bindings represented in a dictionary mapping names
-        to values."""
-        # TODO: Should this wipe out pre-existing bindings or just add
-        # additional ones?
-        dic = dict(dic) #TODO (Tom): Figure out why this line is here?
-        self.variables = dic
 
 
 class Tracker(object):
 
     def __init__(self):
-        self.current_frame = EnvFrame() #this is global
-        self.frames = [self.current_frame]
-        self.call_stack = []
-        self.static_link = {}
-        self.function_tk = {}
-        self.frame_tk = {}
+        # Set up canvas
+        self.canvas = tk.Canvas(tk.Tk(), width=800, height=600)
+        self.canvas.pack(fill=tk.BOTH, expand=1)
+
+        # Set up global and call_stack
+        x, y = self.place(self.canvas)
+        self.call_stack = [Frame(self.canvas, x, y, globe=True)]
+
+    @property
+    def current_frame(self):
+        return self.call_stack[-1]
 
     def defined_function(self, fn):
-        self.current_frame.variables[fn.__name__] = fn
-        self.static_link[fn] = self.current_frame
+        x, y = self.place(self.canvas)
+        fn_tk = Function(self.canvas, x, y, fn.__name__,
+                         inspect.getargspec(fn).args, self.current_frame)
+        # TODO: This will handle lambdas incorrectly
+        self.current_frame.add_binding(Variable(self.canvas,
+                                                self.current_frame,
+                                                fn.__name__), fn_tk)
 
-    def exiting_function(self, fn, py_fr, frame_vars, glob):
+    def enter_function(self, fn):
+        x, y = self.place(self.canvas)
+        self.call_stack.append(Frame(self.canvas, x, y,
+                                     extended_frame=self.current_frame))
+
+    def exit_function(self, fn, py_fr, frame_vars):
         frame = self.current_frame
-        frame.add_vars(frame_vars)
+        for var in frame_vars:
+            if type(frame_vars[var]) != FUNCTION_TYPE and \
+               not self._should_clean(var, frame_vars[var]):
+                diag_var = Variable(self.canvas, self.current_frame, var)
+                diag_val = Value(self.canvas, self.current_frame,
+                                 frame_vars[var])
+                frame.add_binding(diag_var, diag_val)
         debug_print(frame.variables)
         debug_print("CALL STACK POP", fn)
         self.current_frame = self.call_stack.pop()
@@ -130,41 +119,38 @@ class Tracker(object):
         if cur_globals is None:
             cur_globals = inspect.currentframe().f_globals
         self.current_frame.add_vars(self.clean_frame(cur_globals))
-        master = tk.Tk()
-        canvas = tk.Canvas(master, width=800, height=600)
-        canvas.pack(fill=tk.BOTH, expand=1)
         for i, fr in enumerate(self.frames):
-            x, y = self.place(canvas)
-            fr_tk = Frame(canvas, x, y, i == 0)
+            x, y = self.place(self.canvas)
+            fr_tk = Frame(self.canvas, x, y, i == 0)
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
-                variable_draw = Variable(canvas, fr_tk, var)
+                variable_draw = Variable(self.canvas, fr_tk, var)
                 if val in self.function_tk:
                     value_draw = self.function_tk[val]
                 elif type(val) == FUNCTION_TYPE:
-                    x, y = self.place(canvas)
+                    x, y = self.place(self.canvas)
                     # fr_tk is wrong, but this is a structural problem where we
                     # define functions by bindings we find rather than when we
                     # see it created.
-                    value_draw = Function(canvas, x, y, val.__name__,
+                    value_draw = Function(self.canvas, x, y, val.__name__,
                         inspect.getargspec(val).args, fr_tk)
                     self.function_tk[val] = value_draw
                 else:
-                    value_draw = Value(canvas, fr_tk, val)
+                    value_draw = Value(self.canvas, fr_tk, val)
                 fr_tk.add_binding(variable_draw, value_draw)
-                #Connector(canvas, value_draw, variable_draw)
+                #Connector(self.canvas, value_draw, variable_draw)
 
         for f, ftk in self.frame_tk.items():
             f_back = f.f_back
             if f_back:
-                Connector(canvas, self.frame_tk[f.f_back], ftk)
+                Connector(self.canvas, self.frame_tk[f.f_back], ftk)
 
         debug_pprint(self.static_link)
         for fn, fr in self.static_link.items():
             debug_print(fn, fr.variables)
             fn_tk = self.function_tk[fn]
             fr_tk = self.frame_tk[fr]
-            #Connector(canvas, fr_tk, fn_tk)
+            #Connector(self.canvas, fr_tk, fn_tk)
 
     def place(self, canvas):
         if len(canvas.find_all()) == 0:

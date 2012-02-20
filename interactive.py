@@ -26,7 +26,7 @@ class EnvDrawConsole(InteractiveConsole):
                                                             AddFuncDef().visit(tree))))
                 compiled_code = compile(new_tree, filename, symbol)
                 self.runcode(compiled_code)
-                TRACKER.draw(self.locals)
+                #TRACKER.draw(self.locals)
                 return False
             else:
                 return InteractiveConsole.runsource(self, source, filename, symbol)
