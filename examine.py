@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
 
 import inspect, gc
-from envdraw2 import *
+from envdraw import *
 from drawable import *
 from util import *
 import tkinter as tk
@@ -11,7 +11,7 @@ import sys
 FUNCTION_TYPE = type(lambda x: 0)
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
                   "encodings.utf_8", "codecs", "ast", "_ast", "rewrite",
-                  "envdraw2", "tkinter", "_functools", "_heapq", "util"}
+                  "envdraw", "tkinter", "_functools", "_heapq", "util"}
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
                 "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
                 "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",

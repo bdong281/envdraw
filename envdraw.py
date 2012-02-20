@@ -15,7 +15,7 @@ def _get_called_function():
 class AddFuncDef(ast.NodeTransformer):
     """NodeTransformer for asts which takes each function defintion (either by
     a def statement or by a lambda expression) and uses the funcdef decorator
-    with the function (as defined in examine2.py).
+    with the function (as defined in examine.py).
     """
 
     def visit_FunctionDef(self, node):
