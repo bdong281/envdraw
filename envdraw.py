@@ -36,16 +36,24 @@ class AddFuncDef(ast.NodeTransformer):
 
     
 class AddFuncReturn(ast.NodeTransformer):
+    """NodeTransformer for asts which takes each return statement and replaces
+    'return expr' with 'return funcreturn(expr)'.
+    """
     
     def visit_Return(self, node):
+        """Take Return node and change the code in the ast from 'return expr'
+        to 'return funcreturn(expr)'
+        """
         new = ast.Call(func=ast.Name(id='funcreturn', ctx=ast.Load()), args=[node.value], keywords=[])
         self.generic_visit(node)
         node.value = new
         return node
 
 class AddFuncCall(ast.NodeTransformer):
+    """Modify function calls to start with a call to funccall."""
 
     def visit_FunctionDef(self, node):
+        """Insert into the body of the function an initial call to funccall."""
         new = ast.Expr(value=ast.Call(func=ast.Name(id='funccall', ctx=ast.Load()), args=[], keywords=[]))
         node.body.insert(0, new)
         self.generic_visit(node)
