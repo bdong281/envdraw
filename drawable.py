@@ -1,7 +1,5 @@
 import tkinter as tk
 import math
-from heapq import heappush, heappop
-from functools import reduce
 
 class Drawable(object):
 
@@ -26,8 +24,8 @@ class Drawable(object):
         cost = len(covering) * 200 + len(proximity) * 150
         return distance + cost
 
-# Connectables
 
+# Connectables
 class Connectable(Drawable):
 
     def __init__(self, canvas):
@@ -74,188 +72,7 @@ class Draggable(Connectable):
         self.move(-(x % 10), -(y % 10))
 
 
-
-class Frame(Draggable):
-
-    prefix = "frame"
-
-    def __init__(self, canvas, x, y, globe=False):
-        Draggable.__init__(self, canvas)
-        self.variables = []
-        self.values = []
-        self.rect = canvas.create_rectangle(x, y, x + self.width, y +
-                self.height, tag=self.tag, fill="white")
-        canvas.create_oval(x+135, y-15, x+165, y+15, tag=self.tag,
-                fill="white")
-        if globe:
-            pass
-        else:
-            canvas.create_oval(x+145, y-5, x+155, y+5, tag=self.tag,
-                    fill="black")
-
-    @property
-    def pos(self):
-        return tuple(self.canvas.coords(self.rect)[0:2])
-
-    def add_variable(self, variable):
-        """Adds a Variable to this Frame. Returns the position that the
-        Variable should be drawn at.
-
-        TODO: Automatically grow frame when too many variables are defined.
-        """
-        self.variables.append(variable)
-        self.update()
-        x, y = self.pos
-        return x + 10, y + len(self.variables) * 20
-
-    def add_value(self, value):
-        self.values.append(value)
-        x, y = self.pos
-        return x + 140, y + len(self.values) * 20
-
-    def move(self, dx, dy):
-        Draggable.move(self, dx, dy)
-        for variable in self.variables:
-            variable.move(dx, dy)
-        for value in self.values:
-            value.move(dx, dy)
-
-    def update(self):
-        x, y = self.pos
-        self.canvas.coords(self.rect, x, y, x + self.width, y + self.height)
-
-    @property
-    def inhandle(self):
-        x, y = self.pos
-        leftside = tuple(((x, y + 20 * (i+1)) for i in
-                range(len(self.variables)+1)))
-        rightside = tuple(((x + self.width, y + 20 * (i+1)) for i in
-                range(len(self.variables)+1)))
-        topside = (x+40, y), (x+110, y)
-        downside = tuple(((x, y+self.height) for x, y in topside))
-        return leftside + rightside + topside + downside
-
-    @property
-    def outhandle(self):
-        x, y = self.pos
-        return x + self.width, y
-
-
-    @property
-    def width(self):
-        return 150
-
-    @property
-    def height(self):
-        return 40 + 20 * len(self.variables)
-
-
-class Function(Draggable):
-
-    prefix = "function"
-
-    def __init__(self, canvas, x, y, name, arguments, body="..."):
-        Draggable.__init__(self, canvas)
-        self.shape = canvas.create_polygon(x, y, x+140, y, x+140, y+30,
-                x+150, y+30, x+150, y+60, x+10, y+60, x+10, y+30, x, y+30,
-                tag=self.tag, fill="white", outline="white")
-        canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30,
-                tag=self.tag)
-        canvas.create_line(x, y+30, x+10, y+30, x+10, y+60, x+150, y+60,
-                tag=self.tag)
-        canvas.create_oval(x+125, y-15, x+155, y+15, tag=self.tag, fill="white")
-        canvas.create_oval(x+135, y-5, x+145, y+5, tag=self.tag, fill="black")
-        self.name = canvas.create_text(x, y+5, tag=self.tag, anchor=tk.NW,
-                                       text=name+"("+", ".join(arguments)+"):")
-        self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
-                                       text=body)
-
-    @property
-    def pos(self):
-        return tuple(self.canvas.coords(self.shape)[0:2])
-
-    @property
-    def inhandle(self):
-        x, y = self.pos
-        return (x, y+10), (x+150, y+50)
-
-    @property
-    def outhandle(self):
-        x, y = self.pos
-        return x+140, y
-
-
-class Variable(Connectable):
-
-    prefix = "variable"
-
-    def __init__(self, canvas, frame, name):
-        Connectable.__init__(self, canvas)
-        x, y = frame.add_variable(self)
-        self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":",
-                tag=self.tag)
-
-    def move(self, dx, dy):
-        self.canvas.move(self.tag, dx, dy)
-        self.update_connectors()
-
-
-    @property
-    def pos(self):
-        return tuple(self.canvas.coords(self.text)[0:2])
-
-    @property
-    def width(self):
-        x1, _, x2, _ = self.canvas.bbox(self.text)
-        return ((x2 - x1)//10)*10
-
-    @property
-    def height(self):
-        _, y1, _, y2 = self.canvas.bbox(self.text)
-        return ((y2 - y1)//10)*10
-
-    @property
-    def outhandle(self):
-        x, y = self.pos
-        return round(x + self.width, -1), round(y + self.height // 2, -1)
-
-
-class Value(Connectable):
-
-    prefix = "value"
-
-    def __init__(self, canvas, frame, name):
-        Connectable.__init__(self, canvas)
-        x, y = frame.add_value(self)
-        self.text = canvas.create_text(x, y, anchor=tk.NE, text=name,
-                                       tag=self.tag)
-
-    def move(self, dx, dy):
-        self.canvas.move(self.tag, dx, dy)
-        self.update_connectors()
-
-    @property
-    def pos(self):
-        return tuple(self.canvas.coords(self.text)[0:2])
-
-    @property
-    def width(self):
-        x1, _, x2, _ = self.canvas.bbox(self.text)
-        return x2 - x1
-
-    @property
-    def height(self):
-        _, y1, _, y2 = self.canvas.bbox(self.text)
-        return y2 - y1
-
-    @property
-    def inhandle(self):
-        x, y = self.pos
-        return (round(x - self.width, -1), round(y + self.height // 2, -1)),
-
-
 # Connector
-
 class Connector(Drawable):
     """Represents an arrow between two Connectables."""
 
@@ -291,7 +108,6 @@ class Connector(Drawable):
                     self.distance(self.tail.outhandle, pt) + 50 *
                     inhandle_to_number[pt])
         return self.inhandle
-
 
     def distance(self, point1, point2):
         (x1, y1), (x2, y2) = point1, point2
@@ -343,6 +159,7 @@ class Arrowhead(Drawable):
         new_x = x * c - y * s
         new_y = x * s + y * c
         return new_x, new_y
+
 
 if __name__ == '__main__':
     master = tk.Tk()

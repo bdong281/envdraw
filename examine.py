@@ -2,7 +2,7 @@
 
 import inspect, gc
 from envdraw import *
-from drawable import *
+from components import *
 from util import *
 import tkinter as tk
 import random
@@ -148,7 +148,8 @@ class Tracker(object):
                     self.function_tk[val] = value_draw
                 else:
                     value_draw = Value(canvas, fr_tk, val)
-                Connector(canvas, value_draw, variable_draw)
+                fr_tk.add_binding(variable_draw, value_draw)
+                #Connector(canvas, value_draw, variable_draw)
 
         for f, ftk in self.frame_tk.items():
             f_back = f.f_back
@@ -182,6 +183,16 @@ funcdef.tracker = TRACKER
 funcreturn.tracker = TRACKER
 funccall.tracker = TRACKER
 
+IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
+                  "encodings.utf_8", "codecs", "ast", "_ast", "rewrite",
+                  "envdraw", "tkinter", "_functools", "_heapq", "util"}
+"""
+IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
+                "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
+                "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
+                "_get_called_function", "TRACKER", "EnvFrame", "pprint", "funccall"}
+                """
+IGNORE_VARS = set(locals().keys())
 
 if __name__ == '__main__':
     tree = ast.parse(open(sys.argv[1]).read())
