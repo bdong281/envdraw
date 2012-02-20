@@ -14,9 +14,7 @@ class Drawable(object):
 
     @property
     def tag(self):
-        """
-        Returns the tag used to group components of this Drawable.
-        """
+        """Returns the tag used to group components of this Drawable."""
         return self.prefix + str(self.id)
 
     def heuristic(self, point, goal):
@@ -100,9 +98,8 @@ class Frame(Draggable):
         return tuple(self.canvas.coords(self.rect)[0:2])
 
     def add_variable(self, variable):
-        """
-        Adds a Variable to this Frame. Returns the position that the Variable
-        should be drawn at.
+        """Adds a Variable to this Frame. Returns the position that the
+        Variable should be drawn at.
 
         TODO: Automatically grow frame when too many variables are defined.
         """
@@ -137,7 +134,6 @@ class Frame(Draggable):
         topside = (x+40, y), (x+110, y)
         downside = tuple(((x, y+self.height) for x, y in topside))
         return leftside + rightside + topside + downside
-#        return (x + self.width, y + self.height - 20), (x, y + self.height - 20)
 
     @property
     def outhandle(self):
@@ -261,9 +257,7 @@ class Value(Connectable):
 # Connector
 
 class Connector(Drawable):
-    """
-    Represents an arrow between two Connectables.
-    """
+    """Represents an arrow between two Connectables."""
 
     prefix = "connector"
 
@@ -279,8 +273,8 @@ class Connector(Drawable):
         self.arrow = Arrowhead(canvas, self)
 
     def update(self):
-        """
-        Redraws this Connector based on the new position of its head and tail.
+        """Redraws this Connector based on the new position of its head and
+        tail.
         """
         self.canvas.coords(self.tag, *self.gen_coords(update=True))
         self.arrow.update()
@@ -304,50 +298,9 @@ class Connector(Drawable):
         return abs(x1 - x2) + abs(y1 - y2)
 
     def gen_coords(self, update=False):
-        """
-        Generates a sequence of coordinates for drawing an arrow
-        """
+        """Generates a sequence of coordinates for drawing an arrow"""
         (x1, y1), (x2, y2) = self.closest_inhandle(update=update), self.tail.outhandle
         return x1, y1, x2, y1, x2, y2
-#        if update:
-#            start, goal = self.tail.outhandle, self.closest_inhandle()
-#            closed, fringe = set(), []
-#            initial = (start, [start])
-#            heappush(fringe, (0, initial))
-#
-#            while fringe:
-#                cost, (state, path) = heappop(fringe)
-#                if state == goal:
-#                    if len(path) == 1:
-#                        path = path + path
-#                    self.line = reduce(lambda x, y: x + y, path, ())
-#                    return self.line
-#
-#                if state not in closed:
-#                    closed.add(state)
-#                    for direction in [(10, 0), (-10, 0), (0, 10), (0, -10)]:
-#                        point = (state[0] + direction[0], state[1] + direction[1])
-#                        new_cost = cost + self.heuristic(point, goal)
-#                        if len(path) > 1:
-#                            (x1, y1), (x2, y2) = path[0], path[1]
-#                            if point[0] == x1 == x2 or point[1] == y1 == y2:
-#                                new_path = [point] + path[1:]
-#                            else:
-#                                new_path = [point] + path
-#                                prev_point = new_path[1]
-#                                if point[1] == prev_point[1]:
-#                                    dist = point[0] - prev_point[0]
-#                                else:
-#                                    dist = point[1] - prev_point[1]
-#                                if dist < 2:
-#                                    new_cost += 100
-#                                new_cost += 50
-#                        else:
-#                            new_path = [point] + path
-#                        heappush(fringe, (new_cost, (point, new_path)))
-#            return None
-#        else:
-#            return self.line
 
 
 class Arrowhead(Drawable):
