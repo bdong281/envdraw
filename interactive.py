@@ -7,7 +7,7 @@ This was added by Tom Magrino (tmagrino@berkeley.edu)
 
 import ast, inspect
 from code import InteractiveConsole, compile_command
-from examine2 import *
+from examine import *
 from pprint import pprint
 
 class EnvDrawConsole(InteractiveConsole):
