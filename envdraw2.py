@@ -9,7 +9,7 @@ def _get_called_function():
     code = frame.f_code
     global_obs = frame.f_globals
     for possible in gc.get_referrers(code):
-        if type(possible) == type(lambda x: 0):
+        if type(possible) == FUNCTION_TYPE:
             return possible
 
 class AddFuncDef(ast.NodeTransformer):
