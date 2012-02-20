@@ -14,6 +14,10 @@ class EnvDrawConsole(InteractiveConsole):
     """InteractiveConsole for the EnvDraw program."""
 
     def runsource(self, source, filename="<input>", symbol="single"):
+        """Do the same thing as any InteractiveConsole, except if we run into a
+        completed statement, we first run the decoration code for envdraw on it
+        before passing it off to the execute part of the REPL.
+        """
         try:
             if compile_command(source, filename, symbol):
                 tree = ast.parse(source, filename, symbol)
@@ -30,11 +34,9 @@ class EnvDrawConsole(InteractiveConsole):
             self.showsyntaxerror(filename)
             return False
 
-    def runcode(self, code):
-        InteractiveConsole.runcode(self, code)
-
 
 if __name__ == "__main__":
+    # Add in bindings that we want to have "under the hood" in the interpreter
     local_bindings = {v : globals()[v] for v in IGNORE_VARS if v in
                       globals().keys()}
     EnvDrawConsole(locals=local_bindings).interact()
