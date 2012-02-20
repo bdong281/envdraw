@@ -164,7 +164,7 @@ class Value(Connectable):
 
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
-        #self.update_connectors() # This should be done by the binding.
+        self.update_connectors()
 
     def set_pos(self, x, y):
         self.canvas.move(self.tag, x - self.pos[0], y - self.pos[1])
@@ -225,7 +225,7 @@ class Binding(Connector):
         self.update()
 
 
-class Function(Value):
+class Function(Value, Draggable):
     """Represents a Function Value.  A Function is a Value which does not
     translate with the Binding.
 
@@ -244,6 +244,7 @@ class Function(Value):
         self.shape = canvas.create_polygon(x, y, x+140, y, x+140, y+30,
                 x+150, y+30, x+150, y+60, x+10, y+60, x+10, y+30, x, y+30,
                 tag=self.tag, fill="white", outline="white")
+        self.static_link = StaticLink(canvas, self, defining_frame)
         canvas.create_line(x, y, x+140, y, x+140, y+30, x+150, y+30,
                 tag=self.tag)
         canvas.create_line(x, y+30, x+10, y+30, x+10, y+60, x+150, y+60,
@@ -254,8 +255,6 @@ class Function(Value):
                                        text=name+"("+", ".join(arguments)+"):")
         self.body = canvas.create_text(x+15, y+35, tag=self.tag, anchor=tk.NW,
                                        text=body)
-        self.static_link = StaticLink(canvas, self, defining_frame)
-        self.update()
 
     @property
     def pos(self):

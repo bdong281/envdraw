@@ -143,8 +143,11 @@ class Tracker(object):
                     value_draw = self.function_tk[val]
                 elif type(val) == FUNCTION_TYPE:
                     x, y = self.place(canvas)
+                    # fr_tk is wrong, but this is a structural problem where we
+                    # define functions by bindings we find rather than when we
+                    # see it created.
                     value_draw = Function(canvas, x, y, val.__name__,
-                        inspect.getargspec(val).args)
+                        inspect.getargspec(val).args, fr_tk)
                     self.function_tk[val] = value_draw
                 else:
                     value_draw = Value(canvas, fr_tk, val)
@@ -161,7 +164,7 @@ class Tracker(object):
             debug_print(fn, fr.variables)
             fn_tk = self.function_tk[fn]
             fr_tk = self.frame_tk[fr]
-            Connector(canvas, fr_tk, fn_tk)
+            #Connector(canvas, fr_tk, fn_tk)
 
     def place(self, canvas):
         if len(canvas.find_all()) == 0:
