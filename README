@@ -3,6 +3,9 @@ Documentation should probably go here.
 TODO:
 	- Get interactive mode to refresh the same window instead of drawing a
 	  new window after each statement.
+	- Combine the internal GUI objects with their associated internal data
+	  structures.  No need to keep the two separate, that gets in the way
+	  of allowing dynamic updates to the GUI.
 	- Resolve nonlocal bindings and updates correctly.
 	- Draw box and pointer diagrams for builtin sequence types.
 	- Draw some useful representation of user defined classes.
