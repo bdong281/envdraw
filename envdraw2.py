@@ -13,13 +13,23 @@ def _get_called_function():
             return possible
 
 class AddFuncDef(ast.NodeTransformer):
+    """NodeTransformer for asts which takes each function defintion (either by
+    a def statement or by a lambda expression) and uses the funcdef decorator
+    with the function (as defined in examine2.py).
+    """
 
     def visit_FunctionDef(self, node):
+        """Perform transformation on def statements.  Simply add the decorator
+        to the function.
+        """
         node.decorator_list.insert(0, ast.Name(id='funcdef', ctx=ast.Load()))
         self.generic_visit(node)
         return node
 
     def visit_Lambda(self, node):
+        """Perform transformation on lambda expressions.  Set the value of the
+        lambda to be the result of calling funcdef on the original function.
+        """
         new = ast.Call(func=ast.Name(id='funcdef', ctx=ast.Load()), args=[node], keywords=[])
         self.generic_visit(node)
         return new
