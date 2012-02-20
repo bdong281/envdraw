@@ -15,7 +15,7 @@ IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
 IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
                 "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
                 "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
-                "_get_called_function", "TRACKER", "Env_Frame", "pprint", "funccall"}
+                "_get_called_function", "TRACKER", "EnvFrame", "pprint", "funccall"}
 
 def _get_called_function():
     frame = inspect.currentframe().f_back.f_back
@@ -38,7 +38,7 @@ def funccall():
     debug_print("making a new frame for function call to ", fn)
     tracker.call_stack.append(tracker.current_frame)
     debug_print("CALL STACK APPEND", fn)
-    tracker.current_frame = Env_Frame(f_back=tracker.static_link[fn])
+    tracker.current_frame = EnvFrame(f_back=tracker.static_link[fn])
     tracker.frames.append(tracker.current_frame)
 
 
@@ -64,27 +64,35 @@ def funcreturn(val):
     return val
 
 
-class Env_Frame(object):
+class EnvFrame(object):
+    """Represents a frame in the environment diagram."""
+
     def __init__(self, f_back=None, tk=None):
         self.variables = {}
         self.f_back = f_back
         self.f_forward = []
 
     def extends(self, frame):
+        """Set the frame which this EnvFrame is extending."""
         self.f_back = frame
 
     def extended_by(self, frame):
+        """Add a frame that extends this EnvFrame."""
         self.f_forward.append(frame)
 
     def add_vars(self, dic):
-        dic = dict(dic)
+        """Add a series of bindings represented in a dictionary mapping names
+        to values."""
+        # TODO: Should this wipe out pre-existing bindings or just add
+        # additional ones?
+        dic = dict(dic) #TODO (Tom): Figure out why this line is here?
         self.variables = dic
 
 
 class Tracker(object):
 
     def __init__(self):
-        self.current_frame = Env_Frame() #this is global
+        self.current_frame = EnvFrame() #this is global
         self.frames = [self.current_frame]
         self.call_stack = []
         self.static_link = {}
