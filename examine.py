@@ -22,18 +22,44 @@ def _get_called_function():
 
 
 def funcdef(func):
+    """This is called on a function when it is first created (lambda or def
+    statement).  This leads to transformations of for def statements where
+        def foo(x):
+            return x * x
+    becomes
+        @funcdef
+        def foo(x):
+            return x * x
+    and, for lambdas,
+        x = lambda y: y * y
+    becomes
+        x = funcdef(lambda y: y * y)
+
+    Arguments:
+        func -- The function we're decorating in the inputted code.
+    """
     funcdef.tracker.defined_function(func)
     debug_print('def:', func)
     return func
 
 
 def funccall():
+    """This is inserted as a call before the body of a function."""
     fn = _get_called_function()
     debug_print("making a new frame for function call to ", fn)
     funccall.tracker.enter_function(fn)
 
 
 def funcreturn(val):
+    """Used as a replacement for any locations in a function where the program
+    exits the function (either at a return or at the end of the suite).
+    Essentially we do transformations like:
+
+        return expr --> return funcreturn(expr)
+    
+    Arguments:
+        val -- the value you'd normally return.
+    """
     py_fr = inspect.currentframe().f_back
     f_locals = dict(py_fr.f_locals)
     f_globals = dict(py_fr.f_globals)
@@ -45,7 +71,7 @@ def funcreturn(val):
     args = inspect.getargspec(fn).args
     debug_print(fn.__closure__)
     # If there are "free" variables, variables that are used but not defined in
-    # the current scope
+    # the current scope.
     if fn.__closure__:
         closures = set([x.cell_contents for x in fn.__closure__])
         for k,v in f_locals.items():
@@ -64,7 +90,7 @@ class Tracker(object):
         self.canvas = tk.Canvas(tk.Tk(), width=800, height=600)
         self.canvas.pack(fill=tk.BOTH, expand=1)
 
-        # Set up global and call_stack
+        # Set up call_stack with global frame
         x, y = self.place(self.canvas)
         self.call_stack = [Frame(self.canvas, x, y, globe=True)]
 
@@ -77,10 +103,20 @@ class Tracker(object):
         return self.call_stack[0]
 
     def defined_function(self, fn):
+        """We've defined the given function, now draw it in the current
+        frame.
+
+        Arguments:
+            fn -- The function value that was just created in the current
+            frame.
+
+        TODO: Needs to handle lambdas correctly (currently it adds an incorrect
+        variable binding since it doesn't differentiate between creation of the
+        function object and binding it to a variable).
+        """
         x, y = self.place(self.canvas)
         fn_tk = Function(self.canvas, x, y, fn.__name__,
                          inspect.getargspec(fn).args, self.current_frame)
-        # TODO: This will handle lambdas incorrectly
         self.current_frame.add_binding(Variable(self.canvas,
                                                 self.current_frame,
                                                 fn.__name__), fn_tk)
@@ -103,6 +139,7 @@ class Tracker(object):
         self.call_stack.pop()
 
     def clean_frame(self, frame_locals):
+        """Pretty sure this is deprecated."""
         to_remove = []
         for key, value in frame_locals.items():
             if self._should_clean(key, value):
@@ -113,12 +150,18 @@ class Tracker(object):
         return cleaned_frame
 
     def _should_clean(self, key, value):
+        """Should this key and value in some environment be cleaned out of the
+        final product?
+        """
         return key.startswith("__") or \
                 key in IGNORE_VARS or \
                 inspect.ismodule(value) or \
                 getattr(value, "__module__", None) in IGNORE_MODULES
 
     def insert_global_bindings(self, global_vals):
+        """THIS IS A HACK... WE NEED A BETTER WAY TO TRACK UPDATES AND FILL IN
+        GLOBAL/NONLOCAL FRAMES (tmagrino).
+        """
         for var, val in global_vals.items():
             if not self._should_clean(var, val):
                 diag_var = Variable(self.canvas, self.global_frame, var)
@@ -126,6 +169,7 @@ class Tracker(object):
                 self.global_frame.add_binding(diag_var, diag_val)
 
     def draw(self, cur_globals=None):
+        """Deprecated."""
         if cur_globals is None:
             cur_globals = inspect.currentframe().f_globals
         self.current_frame.add_vars(self.clean_frame(cur_globals))
@@ -162,13 +206,14 @@ class Tracker(object):
             fr_tk = self.frame_tk[fr]
             #Connector(self.canvas, fr_tk, fn_tk)
 
-    def place(self, canvas):
-        if len(canvas.find_all()) == 0:
+    def place(self):
+        """Find an available space to place a new item on the GUI canvas."""
+        if len(self.canvas.find_all()) == 0:
             return 50, 50
         x, y = random.randint(50, 600), random.randint(50, 500)
         x, y = x//10*10, y//10*10
         attempts = 0
-        while len(canvas.find_overlapping(x-10, y-10, x+160, y+80)) > 0:
+        while len(self.canvas.find_overlapping(x-10, y-10, x+160, y+80)) > 0:
             if attempts > 30:
                 break
             x, y = random.randint(50, 650), random.randint(50, 500)
@@ -177,11 +222,17 @@ class Tracker(object):
         return x, y
 
 
+# TODO: UGLY UGLY UGLY, should be handled differently.  Cold probably make the
+# three functions associated with an instance of the Tracker class and could be
+# given to the ast NodeTransformers to be used?  Problem there is that we still
+# need an identifier for the way we currently pull that off.
 TRACKER = Tracker()
 funcdef.tracker = TRACKER
 funcreturn.tracker = TRACKER
 funccall.tracker = TRACKER
 
+# TODO: This and IGNORE_VARS are both redundant and could be better done as a
+# dynamically generated set of values.
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
                   "encodings.utf_8", "codecs", "ast", "_ast", "rewrite",
                   "envdraw", "tkinter", "_functools", "_heapq", "util"}
@@ -192,4 +243,5 @@ if __name__ == '__main__':
     new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
     exec(compile(new_tree, '<unknown>', 'exec'))
     TRACKER.insert_global_bindings(globals())
+    # TODO: Is there a better way to wait for the user to quit, using Tk?
     input()
