@@ -49,6 +49,19 @@ class AddFuncReturn(ast.NodeTransformer):
         node.value = new
         return node
 
+    def visit_FunctionDef(self, node):
+        """Take FunctionDef node and add an additional call to funcreturn at
+        the end, just in case there's no return statement...
+        """
+        new = ast.Return(value=ast.Call(func=ast.Name(id='funcreturn',
+                                                      ctx=ast.Load()),
+                                        args=[ast.Name(id='None',
+                                                       ctx=ast.Load())],
+                                        keywords=[]))
+        self.generic_visit(node)
+        node.body.append(new)
+        return node
+
     def visit_Lambda(self, node):
         """Perform the equivalent transformation on the result of the lambda
         statement's evaluation.
