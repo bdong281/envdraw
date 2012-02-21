@@ -115,6 +115,7 @@ class Tracker(object):
         function object and binding it to a variable).
         """
         x, y = self.place()
+        #TODO: this is currently dynamic scope. make it lexical
         fn_tk = Function(self.canvas, x, y, fn.__name__,
                          inspect.getargspec(fn).args, self.current_frame)
         self.current_frame.add_binding(Variable(self.canvas,
