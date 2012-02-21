@@ -91,7 +91,7 @@ class Tracker(object):
         self.canvas.pack(fill=tk.BOTH, expand=1)
 
         # Set up call_stack with global frame
-        x, y = self.place(self.canvas)
+        x, y = self.place()
         self.call_stack = [Frame(self.canvas, x, y, globe=True)]
 
     @property
@@ -114,7 +114,7 @@ class Tracker(object):
         variable binding since it doesn't differentiate between creation of the
         function object and binding it to a variable).
         """
-        x, y = self.place(self.canvas)
+        x, y = self.place()
         fn_tk = Function(self.canvas, x, y, fn.__name__,
                          inspect.getargspec(fn).args, self.current_frame)
         self.current_frame.add_binding(Variable(self.canvas,
@@ -122,7 +122,7 @@ class Tracker(object):
                                                 fn.__name__), fn_tk)
 
     def enter_function(self, fn):
-        x, y = self.place(self.canvas)
+        x, y = self.place()
         self.call_stack.append(Frame(self.canvas, x, y,
                                      extended_frame=self.current_frame))
 
@@ -174,7 +174,7 @@ class Tracker(object):
             cur_globals = inspect.currentframe().f_globals
         self.current_frame.add_vars(self.clean_frame(cur_globals))
         for i, fr in enumerate(self.frames):
-            x, y = self.place(self.canvas)
+            x, y = self.place()
             fr_tk = Frame(self.canvas, x, y, i == 0)
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
@@ -182,7 +182,7 @@ class Tracker(object):
                 if val in self.function_tk:
                     value_draw = self.function_tk[val]
                 elif type(val) == FUNCTION_TYPE:
-                    x, y = self.place(self.canvas)
+                    x, y = self.place()
                     # fr_tk is wrong, but this is a structural problem where we
                     # define functions by bindings we find rather than when we
                     # see it created.
