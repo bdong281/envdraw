@@ -51,7 +51,7 @@ class AddFuncReturn(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node):
         """Take FunctionDef node and add an additional call to funcreturn at
-        the end, just in case there's no return statement...
+        the end, just in case there's no return statement.
         """
         new = ast.Return(value=ast.Call(func=ast.Name(id='funcreturn',
                                                       ctx=ast.Load()),
