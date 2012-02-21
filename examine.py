@@ -95,9 +95,8 @@ class Tracker(object):
                 diag_val = Value(self.canvas, self.current_frame,
                                  frame_vars[var])
                 frame.add_binding(diag_var, diag_val)
-        debug_print(frame.variables)
         debug_print("CALL STACK POP", fn)
-        self.current_frame = self.call_stack.pop()
+        self.call_stack.pop()
 
     def clean_frame(self, frame_locals):
         to_remove = []
