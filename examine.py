@@ -72,6 +72,10 @@ class Tracker(object):
     def current_frame(self):
         return self.call_stack[-1]
 
+    @property
+    def global_frame(self):
+        return self.call_stack[0]
+
     def defined_function(self, fn):
         x, y = self.place(self.canvas)
         fn_tk = Function(self.canvas, x, y, fn.__name__,
@@ -113,6 +117,13 @@ class Tracker(object):
                 key in IGNORE_VARS or \
                 inspect.ismodule(value) or \
                 getattr(value, "__module__", None) in IGNORE_MODULES
+
+    def insert_global_bindings(self, global_vals):
+        for var, val in global_vals.items():
+            if not self._should_clean(var, val):
+                diag_var = Variable(self.canvas, self.global_frame, var)
+                diag_val = Value(self.canvas, self.global_frame, val)
+                self.global_frame.add_binding(diag_var, diag_val)
 
     def draw(self, cur_globals=None):
         if cur_globals is None:
@@ -174,16 +185,11 @@ funccall.tracker = TRACKER
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
                   "encodings.utf_8", "codecs", "ast", "_ast", "rewrite",
                   "envdraw", "tkinter", "_functools", "_heapq", "util"}
-"""
-IGNORE_VARS = {"IGNORE_MODULES", "IGNORE_VARS", "test", "ENVDRAW", "Tracker",
-                "self.glob", "EnvDraw", "envdraw", "AddImport", "AddDecorator",
-                "GLOBAL_FRAME", "FUNCTION_TYPE", "TRACKER", "funcreturn", "funcdef",
-                "_get_called_function", "TRACKER", "EnvFrame", "pprint", "funccall"}
-                """
-IGNORE_VARS = set(locals().keys())
+IGNORE_VARS = set(locals().keys()).union(set(["IGNORE_VARS"]))
 
 if __name__ == '__main__':
     tree = ast.parse(open(sys.argv[1]).read())
     new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
     exec(compile(new_tree, '<unknown>', 'exec'))
+    TRACKER.insert_global_bindings(globals())
     input()
