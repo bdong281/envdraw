@@ -186,10 +186,4 @@ if __name__ == '__main__':
     tree = ast.parse(open(sys.argv[1]).read())
     new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
     exec(compile(new_tree, '<unknown>', 'exec'))
-
-    debug_pprint([v.variables for v in TRACKER.frames])
-    debug_print()
-    debug_pprint(TRACKER.frames)
-
-    TRACKER.draw()
     input()
