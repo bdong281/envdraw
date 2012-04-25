@@ -89,6 +89,7 @@ class Tracker(object):
         # time we need to bind something to it, which when you think about it,
         # HAS to be true :P
         self.functions = {}
+        self.static_links = {}
 
     @property
     def current_frame(self):
@@ -117,11 +118,12 @@ class Tracker(object):
         if fn.__name__ != "<lambda>": # TODO: Kind of a hack
             self.current_frame.add_binding(fn.__name__, fn_tk)
         self.functions[fn] = fn_tk
+        self.static_links[fn] = self.current_frame
 
     def enter_function(self, fn):
         x, y = self.place()
         self.call_stack.append(Frame(self.canvas, x, y,
-                                     extended_frame=self.current_frame))
+                                     extended_frame=self.static_links[fn]))
 
     def exit_function(self, fn, py_fr):
         frame = self.current_frame
