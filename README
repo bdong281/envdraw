@@ -6,3 +6,4 @@ TODO:
 	- Draw box and pointer diagrams for builtin sequence types.
 	- Draw some useful representation of user defined classes.
 	- Write a proper test suite and test script.
+	- We have a bug with comments for the interactive version...
