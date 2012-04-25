@@ -34,7 +34,7 @@ class Connectable(Drawable):
 
     @property
     def pos(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def add_connector(self, connector):
         self.connectors.append(connector)

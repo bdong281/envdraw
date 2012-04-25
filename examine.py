@@ -78,7 +78,7 @@ def funcreturn(val):
             if v in closures and k not in args:
                 del f_locals[k]
     debug_print('returning from', fn)
-    funcreturn.tracker.exit_function(fn, py_fr, f_locals)
+    funcreturn.tracker.exit_function(fn, py_fr)
     debug_print('return:', val)
     return val
 
@@ -93,6 +93,12 @@ class Tracker(object):
         # Set up call_stack with global frame
         x, y = self.place()
         self.call_stack = [Frame(self.canvas, x, y, globe=True)]
+
+        # Keep a directory of Function objects in case we need to re-use.
+        # There's an assumption here that the function will be defined by the
+        # time we need to bind something to it, which when you think about it,
+        # HAS to be true :P
+        self.functions = {}
 
     @property
     def current_frame(self):
@@ -118,24 +124,42 @@ class Tracker(object):
         #TODO: this is currently dynamic scope. make it lexical
         fn_tk = Function(self.canvas, x, y, fn.__name__,
                          inspect.getargspec(fn).args, self.current_frame)
-        self.current_frame.add_binding(Variable(self.canvas,
-                                                self.current_frame,
-                                                fn.__name__), fn_tk)
+        if fn.__name__ != "<lambda>": # TODO: Kind of a hack
+            self.current_frame.add_binding(fn.__name__, fn_tk)
+        self.functions[fn] = fn_tk
 
     def enter_function(self, fn):
         x, y = self.place()
         self.call_stack.append(Frame(self.canvas, x, y,
                                      extended_frame=self.current_frame))
 
-    def exit_function(self, fn, py_fr, frame_vars):
+    def exit_function(self, fn, py_fr):
         frame = self.current_frame
-        for var in frame_vars:
-            if type(frame_vars[var]) != FUNCTION_TYPE and \
-               not self._should_clean(var, frame_vars[var]):
-                diag_var = Variable(self.canvas, self.current_frame, var)
-                diag_val = Value(self.canvas, self.current_frame,
-                                 frame_vars[var])
-                frame.add_binding(diag_var, diag_val)
+        local_vars = { var : py_fr.f_locals[var] for var in \
+                      py_fr.f_code.co_varnames }
+        nonlocal_varnames = [ var for var in py_fr.f_locals.keys() if var not \
+                             in local_vars.keys() ]
+        nonlocal_vars = { var : py_fr.f_locals[var] for var in \
+                         nonlocal_varnames }
+        for var, val in py_fr.f_globals.items():
+            if var not in nonlocal_vars:
+                nonlocal_vars[var] = val
+        # For current local variables
+        for var, val in local_vars.items():
+            if not self._should_clean(var, val):
+                if type(val) != FUNCTION_TYPE:
+                    diag_val = Value(self.canvas, self.current_frame, val)
+                else:
+                    diag_val = self.functions[val]
+                frame.add_binding(var, diag_val)
+        # For nonlocal variables
+        for var, val in nonlocal_vars.items():
+            if not self._should_clean(var, val):
+                if type(val) != FUNCTION_TYPE:
+                    diag_val = Value(self.canvas, self.current_frame, val)
+                else:
+                    diag_val = self.functions[val]
+                frame.update_binding(var, diag_val)
         debug_print("CALL STACK POP", fn)
         self.call_stack.pop()
 
@@ -165,9 +189,11 @@ class Tracker(object):
         """
         for var, val in global_vals.items():
             if not self._should_clean(var, val):
-                diag_var = Variable(self.canvas, self.global_frame, var)
-                diag_val = Value(self.canvas, self.global_frame, val)
-                self.global_frame.add_binding(diag_var, diag_val)
+                if type(val) != FUNCTION_TYPE:
+                    diag_val = Value(self.canvas, self.global_frame, val)
+                else:
+                    diag_val = self.functions[val]
+                self.global_frame.add_binding(var, diag_val)
 
     def draw(self, cur_globals=None):
         """Deprecated."""
@@ -179,7 +205,6 @@ class Tracker(object):
             fr_tk = Frame(self.canvas, x, y, i == 0)
             self.frame_tk[fr] = fr_tk
             for var, val in fr.variables.items():
-                variable_draw = Variable(self.canvas, fr_tk, var)
                 if val in self.function_tk:
                     value_draw = self.function_tk[val]
                 elif type(val) == FUNCTION_TYPE:
@@ -192,7 +217,7 @@ class Tracker(object):
                     self.function_tk[val] = value_draw
                 else:
                     value_draw = Value(self.canvas, fr_tk, val)
-                fr_tk.add_binding(variable_draw, value_draw)
+                fr_tk.add_binding(var, value_draw)
                 #Connector(self.canvas, value_draw, variable_draw)
 
         for f, ftk in self.frame_tk.items():

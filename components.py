@@ -53,12 +53,31 @@ class Frame(Draggable):
         TODO: Figure out what to do if there's a pre-existing binding for that
         variable...
         """
+        # If there's already a binding, update it rather than add a new one.
+        for binding in self.bindings:
+            if binding.variable.name == variable:
+                return self.update_binding(variable, value)
+        variable = Variable(self.canvas, self, variable)
         binding = Binding(self.canvas, variable, value)
         self.bindings.append(binding)
         x, y = self.pos
         variable.set_pos(x + 10, y + len(self.bindings) * 20)
         if value.moves_with_binding:
             value.set_pos(x + 140, y + len(self.bindings) * 20)
+        self.update()
+
+    def update_binding(self, variable, value):
+        """Updates a pre-existing Binding in this or some enclosing Frame."""
+        old_value = self.lookup(variable).value
+        if old_value is None:
+            raise BaseException(
+                "Tried to update a variable that's not in scope!")
+        var_x, var_y = self.lookup(variable).variable.pos
+        self.lookup(variable).value = value
+        if old_value.moves_with_binding:
+            old_value.set_pos(0, 0) # Or better yet, somehow remove it
+        if value.moves_with_binding:
+            value.set_pos(var_x + 130, var_y)
         self.update()
 
     def move(self, dx, dy):
@@ -69,6 +88,15 @@ class Frame(Draggable):
     def update(self):
         x, y = self.pos
         self.canvas.coords(self.rect, x, y, x + self.width, y + self.height)
+
+    def lookup(self, variable):
+        """Get the binding associated with this variable."""
+        for binding in self.bindings:
+            if binding.variable.name == variable:
+                return binding
+        if self.static_link is not None:
+            return self.enclosing_frame().lookup(variable)
+        return None
 
     @property
     def inhandle(self):
@@ -122,6 +150,7 @@ class Variable(Connectable):
         x, y = 0, 0 # This should be set when it's bound in a Frame
         self.text = canvas.create_text(x, y, anchor=tk.NW, text=name+":",
                 tag=self.tag)
+        self.name = name
 
     def move(self, dx, dy):
         self.canvas.move(self.tag, dx, dy)
@@ -213,6 +242,15 @@ class Binding(Connector):
     def value(self):
         """The value is at the tail of the Binding Connector."""
         return self.head
+
+    @value.setter
+    def value(self, new_val):
+        """The value is at the tail of the Binding Connector."""
+        # TODO: This is a hack, we should have the head/tail be properties with
+        # appropriate setter methods in Connector.
+        self.head = new_val
+        self.head.add_connector(self)
+        self.update()
 
     def move(self, dx, dy):
         """Move the Binding.  Moves the variable by the given amounts.  If
