@@ -95,7 +95,7 @@ class Frame(Draggable):
             if binding.variable.name == variable:
                 return binding
         if self.static_link is not None:
-            return self.enclosing_frame().lookup(variable)
+            return self.enclosing_frame.lookup(variable)
         return None
 
     @property

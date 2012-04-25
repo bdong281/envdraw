@@ -1,11 +1,9 @@
 Documentation should probably go here.
 
 TODO:
-	- Lambdas don't get bindings...
 	- Handling calls like foo(1)(2) properly like in tests/nested2.py
 	- Adding numbering to Frames
-	- Resolve nonlocal bindings and updates correctly.
 	- Draw box and pointer diagrams for builtin sequence types.
 	- Draw some useful representation of user defined classes.
 	- Write a proper test suite and test script.
-    - Make frames lexical scope
+	- Make frames lexical scope
