@@ -61,22 +61,12 @@ def funcreturn(val):
         val -- the value you'd normally return.
     """
     py_fr = inspect.currentframe().f_back
-    f_locals = dict(py_fr.f_locals)
-    f_globals = dict(py_fr.f_globals)
     fn = _get_called_function()
     try:
         fn = fn.orig
     except:
         pass
-    args = inspect.getargspec(fn).args
     debug_print(fn.__closure__)
-    # If there are "free" variables, variables that are used but not defined in
-    # the current scope.
-    if fn.__closure__:
-        closures = set([x.cell_contents for x in fn.__closure__])
-        for k,v in f_locals.items():
-            if v in closures and k not in args:
-                del f_locals[k]
     debug_print('returning from', fn)
     funcreturn.tracker.exit_function(fn, py_fr)
     debug_print('return:', val)
