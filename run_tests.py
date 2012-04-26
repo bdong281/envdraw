@@ -19,8 +19,7 @@ def run_tests(files_or_directories):
             print("Running test:", filename)
             print("-" * 80)
             with open(filename) as f:
-                for line in f:
-                    print(line)
+                print(f.read())
             print("-" * 80)
             examine.run(filename, locals(), wait=False)
             number_ran += 1
