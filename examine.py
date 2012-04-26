@@ -4,6 +4,7 @@ import inspect, gc
 from envdraw import *
 from components import *
 from util import *
+from pprint import pprint
 import tkinter as tk
 import random
 import sys
@@ -195,20 +196,21 @@ class Tracker(object):
 # three functions associated with an instance of the Tracker class and could be
 # given to the ast NodeTransformers to be used?  Problem there is that we still
 # need an identifier for the way we currently pull that off.
-def run(input_file, additional_ignore_vars, wait=True):
+def run(input_file, additional_ignore_vars=None, wait=True):
     # TODO: Oh god there's so much wrong and sins here.
     global TRACKER, IGNORE_VARS
     old_ignore_vars = IGNORE_VARS
-    IGNORE_VARS = IGNORE_VARS.union(set(additional_ignore_vars))
+    if additional_ignore_vars:
+        IGNORE_VARS = IGNORE_VARS.union(set(additional_ignore_vars))
     TRACKER = Tracker()
     funcdef.tracker = TRACKER
     funcreturn.tracker = TRACKER
     funccall.tracker = TRACKER
 
     tree = ast.parse(open(input_file).read())
-    new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
+    new_tree = envdraw_decorate(tree)
+    IGNORE_VARS = IGNORE_VARS.union(set(locals()))
     exec(compile(new_tree, '<unknown>', 'exec'))
-    TRACKER.insert_global_bindings(globals())
     # TODO: Is there a better way to wait for the user to quit, using Tk?
     if wait:
         try:

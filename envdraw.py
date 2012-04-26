@@ -103,8 +103,23 @@ class AddFuncCall(ast.NodeTransformer):
         return node
 
 
+def envdraw_decorate(orig_ast):
+    orig_ast = ast.fix_missing_locations(AddFuncDef().visit(orig_ast))
+    orig_ast = ast.fix_missing_locations(AddFuncReturn().visit(orig_ast))
+    orig_ast = ast.fix_missing_locations(AddFuncCall().visit(orig_ast))
+    call_to_update = \
+            ast.Expr(value=ast.Call(func=ast.Attribute(value=ast.Name(id='TRACKER',
+                                                                      ctx=ast.Load()),
+                                                       attr='insert_global_bindings',
+                                                       ctx=ast.Load()),
+                                    args=[ast.Call(func=ast.Name(id='locals',
+                                                                 ctx=ast.Load()),
+                                                   args=[], keywords=[])],
+                                    keywords=[]))
+    orig_ast.body.append(call_to_update)
+    return ast.fix_missing_locations(orig_ast)
+
 if __name__ == '__main__':
     tree = ast.parse(open('test.py').read())
     new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
-
     exec(compile(new_tree, '<unknown>', 'exec'))
