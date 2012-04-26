@@ -35,6 +35,9 @@ class EnvDrawConsole(InteractiveConsole):
             return False
 
 TRACKER = Tracker()
+funcdef.tracker = TRACKER
+funcreturn.tracker = TRACKER
+funccall.tracker = TRACKER
 
 if __name__ == "__main__":
     # Add in bindings that we want to have "under the hood" in the interpreter
