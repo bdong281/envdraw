@@ -1,6 +1,8 @@
 Documentation should probably go here.
 
 TODO:
+	- Running on a file (not the interpreter mode) has issues with
+	  detecting all global variables.
 	- Handling calls like foo(1)(2) properly like in tests/nested2.py
 	- Adding numbering to Frames
 	- Draw box and pointer diagrams for builtin sequence types.
