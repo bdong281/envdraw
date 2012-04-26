@@ -112,7 +112,6 @@ class Tracker(object):
         function object and binding it to a variable).
         """
         x, y = self.place()
-        #TODO: this is currently dynamic scope. make it lexical
         fn_tk = Function(self.canvas, x, y, fn.__name__,
                          inspect.getargspec(fn).args, self.current_frame)
         if fn.__name__ != "<lambda>": # TODO: Kind of a hack
@@ -155,17 +154,6 @@ class Tracker(object):
         debug_print("CALL STACK POP", fn)
         self.call_stack.pop()
 
-    def clean_frame(self, frame_locals):
-        """Pretty sure this is deprecated."""
-        to_remove = []
-        for key, value in frame_locals.items():
-            if self._should_clean(key, value):
-                to_remove.append(key)
-        cleaned_frame = dict(frame_locals)
-        for key in to_remove:
-            del cleaned_frame[key]
-        return cleaned_frame
-
     def _should_clean(self, key, value):
         """Should this key and value in some environment be cleaned out of the
         final product?
@@ -187,43 +175,6 @@ class Tracker(object):
                     diag_val = self.functions[val]
                 self.global_frame.add_binding(var, diag_val)
 
-    def draw(self, cur_globals=None):
-        """Deprecated."""
-        if cur_globals is None:
-            cur_globals = inspect.currentframe().f_globals
-        self.current_frame.add_vars(self.clean_frame(cur_globals))
-        for i, fr in enumerate(self.frames):
-            x, y = self.place()
-            fr_tk = Frame(self.canvas, x, y, i == 0)
-            self.frame_tk[fr] = fr_tk
-            for var, val in fr.variables.items():
-                if val in self.function_tk:
-                    value_draw = self.function_tk[val]
-                elif type(val) == FUNCTION_TYPE:
-                    x, y = self.place()
-                    # fr_tk is wrong, but this is a structural problem where we
-                    # define functions by bindings we find rather than when we
-                    # see it created.
-                    value_draw = Function(self.canvas, x, y, val.__name__,
-                        inspect.getargspec(val).args, fr_tk)
-                    self.function_tk[val] = value_draw
-                else:
-                    value_draw = Value(self.canvas, fr_tk, val)
-                fr_tk.add_binding(var, value_draw)
-                #Connector(self.canvas, value_draw, variable_draw)
-
-        for f, ftk in self.frame_tk.items():
-            f_back = f.f_back
-            if f_back:
-                Connector(self.canvas, self.frame_tk[f.f_back], ftk)
-
-        debug_pprint(self.static_link)
-        for fn, fr in self.static_link.items():
-            debug_print(fn, fr.variables)
-            fn_tk = self.function_tk[fn]
-            fr_tk = self.frame_tk[fr]
-            #Connector(self.canvas, fr_tk, fn_tk)
-
     def place(self):
         """Find an available space to place a new item on the GUI canvas."""
         if len(self.canvas.find_all()) == 0:
@@ -244,11 +195,31 @@ class Tracker(object):
 # three functions associated with an instance of the Tracker class and could be
 # given to the ast NodeTransformers to be used?  Problem there is that we still
 # need an identifier for the way we currently pull that off.
-TRACKER = Tracker()
-funcdef.tracker = TRACKER
-funcreturn.tracker = TRACKER
-funccall.tracker = TRACKER
+def run(input_file, additional_ignore_vars, wait=True):
+    # TODO: Oh god there's so much wrong and sins here.
+    global TRACKER, IGNORE_VARS
+    old_ignore_vars = IGNORE_VARS
+    IGNORE_VARS = IGNORE_VARS.union(set(additional_ignore_vars))
+    TRACKER = Tracker()
+    funcdef.tracker = TRACKER
+    funcreturn.tracker = TRACKER
+    funccall.tracker = TRACKER
 
+    tree = ast.parse(open(input_file).read())
+    new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
+    exec(compile(new_tree, '<unknown>', 'exec'))
+    TRACKER.insert_global_bindings(globals())
+    # TODO: Is there a better way to wait for the user to quit, using Tk?
+    if wait:
+        try:
+            input()
+        except EOFError:
+            pass
+
+    IGNORE_VARS = old_ignore_vars
+
+# TODO: So bad, this is so bad, whyyyyyyyyy.
+TRACKER = None
 # TODO: This and IGNORE_VARS are both redundant and could be better done as a
 # dynamically generated set of values.
 IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
@@ -257,9 +228,4 @@ IGNORE_MODULES = {"envdraw", "drawable", "inspect", "code", "locale",
 IGNORE_VARS = set(locals().keys()).union(set(["IGNORE_VARS"]))
 
 if __name__ == '__main__':
-    tree = ast.parse(open(sys.argv[1]).read())
-    new_tree = ast.fix_missing_locations(AddFuncCall().visit(AddFuncReturn().visit(AddFuncDef().visit(tree))))
-    exec(compile(new_tree, '<unknown>', 'exec'))
-    TRACKER.insert_global_bindings(globals())
-    # TODO: Is there a better way to wait for the user to quit, using Tk?
-    input()
+    run(sys.argv[1])

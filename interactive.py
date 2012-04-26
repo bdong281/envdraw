@@ -34,6 +34,7 @@ class EnvDrawConsole(InteractiveConsole):
             self.showsyntaxerror(filename)
             return False
 
+TRACKER = Tracker()
 
 if __name__ == "__main__":
     # Add in bindings that we want to have "under the hood" in the interpreter
