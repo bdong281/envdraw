@@ -192,7 +192,7 @@ class Tracker(object):
         return x, y
 
 
-# TODO: UGLY UGLY UGLY, should be handled differently.  Cold probably make the
+# TODO: UGLY UGLY UGLY, should be handled differently.  Could probably make the
 # three functions associated with an instance of the Tracker class and could be
 # given to the ast NodeTransformers to be used?  Problem there is that we still
 # need an identifier for the way we currently pull that off.
@@ -207,10 +207,13 @@ def run(input_file, additional_ignore_vars=None, wait=True):
     funcreturn.tracker = TRACKER
     funccall.tracker = TRACKER
 
-    tree = ast.parse(open(input_file).read())
+    tree = ast.parse(open(input_file).read(), filename=input_file)
     new_tree = envdraw_decorate(tree)
+    exec_globals = locals()
+    for k, v in globals().items():
+        exec_globals[k] = v
     IGNORE_VARS = IGNORE_VARS.union(set(locals()))
-    exec(compile(new_tree, '<unknown>', 'exec'))
+    exec(compile(new_tree, input_file, 'exec'), exec_globals, locals())
     # TODO: Is there a better way to wait for the user to quit, using Tk?
     if wait:
         try:

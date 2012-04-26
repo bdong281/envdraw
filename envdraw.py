@@ -1,6 +1,9 @@
 import ast
 import inspect
 import gc
+import sys
+from pprint import pprint
+from examine import *
 
 FUNCTION_TYPE = type(lambda x: 0)
 
@@ -22,16 +25,16 @@ class AddFuncDef(ast.NodeTransformer):
         """Perform transformation on def statements.  Simply add the decorator
         to the function.
         """
-        node.decorator_list.insert(0, ast.Name(id='funcdef', ctx=ast.Load()))
         self.generic_visit(node)
+        node.decorator_list.insert(0, ast.Name(id='funcdef', ctx=ast.Load()))
         return node
 
     def visit_Lambda(self, node):
         """Perform transformation on lambda expressions.  Set the value of the
         lambda to be the result of calling funcdef on the original function.
         """
-        new = ast.Call(func=ast.Name(id='funcdef', ctx=ast.Load()), args=[node], keywords=[])
         self.generic_visit(node)
+        new = ast.Call(func=ast.Name(id='funcdef', ctx=ast.Load()), args=[node], keywords=[])
         return new
 
     
@@ -44,8 +47,8 @@ class AddFuncReturn(ast.NodeTransformer):
         """Take Return node and change the code in the ast from 'return expr'
         to 'return funcreturn(expr)'
         """
-        new = ast.Call(func=ast.Name(id='funcreturn', ctx=ast.Load()), args=[node.value], keywords=[])
         self.generic_visit(node)
+        new = ast.Call(func=ast.Name(id='funcreturn', ctx=ast.Load()), args=[node.value], keywords=[])
         node.value = new
         return node
 
@@ -53,12 +56,12 @@ class AddFuncReturn(ast.NodeTransformer):
         """Take FunctionDef node and add an additional call to funcreturn at
         the end, just in case there's no return statement.
         """
+        self.generic_visit(node)
         new = ast.Return(value=ast.Call(func=ast.Name(id='funcreturn',
                                                       ctx=ast.Load()),
                                         args=[ast.Name(id='None',
                                                        ctx=ast.Load())],
                                         keywords=[]))
-        self.generic_visit(node)
         node.body.append(new)
         return node
 
@@ -66,10 +69,10 @@ class AddFuncReturn(ast.NodeTransformer):
         """Perform the equivalent transformation on the result of the lambda
         statement's evaluation.
         """
+        self.generic_visit(node)
         new_body = ast.Call(func=ast.Name(id='funcreturn', ctx=ast.Load()),
                             args=[node.body], keywords=[])
         node.body = new_body
-        self.generic_visit(node)
         return node
 
 class AddFuncCall(ast.NodeTransformer):
@@ -77,9 +80,9 @@ class AddFuncCall(ast.NodeTransformer):
 
     def visit_FunctionDef(self, node):
         """Insert into the body of the function an initial call to funccall."""
+        self.generic_visit(node)
         new = ast.Expr(value=ast.Call(func=ast.Name(id='funccall', ctx=ast.Load()), args=[], keywords=[]))
         node.body.insert(0, new)
-        self.generic_visit(node)
         return node
 
     def visit_Lambda(self, node):
@@ -90,6 +93,7 @@ class AddFuncCall(ast.NodeTransformer):
         To simulate the same effect as calling it at the beginning of the
         equivalent function definition and reference.
         """
+        self.generic_visit(node)
         call_to_funccall = ast.Call(func=ast.Name(id='funccall',
                                                   ctx=ast.Load()), args=[],
                                     keywords=[])
@@ -99,14 +103,13 @@ class AddFuncCall(ast.NodeTransformer):
                                     slice=ast.Index(value=ast.Num(n=1)),
                                     ctx=ast.Load())
         node.body = replacement
-        self.generic_visit(node)
         return node
 
 
 def envdraw_decorate(orig_ast):
-    orig_ast = ast.fix_missing_locations(AddFuncDef().visit(orig_ast))
-    orig_ast = ast.fix_missing_locations(AddFuncReturn().visit(orig_ast))
-    orig_ast = ast.fix_missing_locations(AddFuncCall().visit(orig_ast))
+    orig_ast = AddFuncDef().visit(orig_ast)
+    orig_ast = AddFuncReturn().visit(orig_ast)
+    orig_ast = AddFuncCall().visit(orig_ast)
     call_to_update = \
             ast.Expr(value=ast.Call(func=ast.Attribute(value=ast.Name(id='TRACKER',
                                                                       ctx=ast.Load()),
@@ -116,10 +119,11 @@ def envdraw_decorate(orig_ast):
                                                                  ctx=ast.Load()),
                                                    args=[], keywords=[])],
                                     keywords=[]))
-    orig_ast.body.append(call_to_update)
+    #orig_ast.body.append(call_to_update)
     return ast.fix_missing_locations(orig_ast)
 
 if __name__ == '__main__':
-    tree = ast.parse(open('test.py').read())
-    new_tree = ast.fix_missing_locations(AddFuncReturn().visit(AddFuncDef().visit(tree)))
-    exec(compile(new_tree, '<unknown>', 'exec'))
+    tree = ast.parse(open(sys.argv[1]).read())
+    new_tree = envdraw_decorate(tree)
+    pprint(ast.dump(new_tree))
+    #compile(new_tree, '<unknown>', 'exec')
